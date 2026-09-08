@@ -12,7 +12,7 @@ A lightweight extension suite that polishes Pi's shell interface.
 
 Built entirely on Pi's own extension mechanism — zero source modification, easy to attach and remove.
 
-> **Fullscreen mode strongly recommended** for the best experience.
+> **Fullscreen mode strongly recommended** (set TUI mode to full screen in `/settings`) for the best experience.
 
 ### Interface Optimization
 
@@ -88,7 +88,7 @@ pi update git:github.com/mocha114514/my-pi-extension-plugin
 
 完全依赖于pi自身的扩展机制，零源码修改，轻量装卸。
 
-> **强烈建议在 pi 的全屏模式下配合使用该插件，以获得最好效果。**
+> **强烈建议在 pi 的全屏模式（在 `/settings` 的 TUI mode 中选择 full screen）下配合使用该插件，以获得最好效果。**
 
 ### 界面优化
 
