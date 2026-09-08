@@ -243,6 +243,14 @@ export class StylizedDesignEditor extends CustomEditor {
 			this.onChange(this.getText());
 		}
 
+		this.clearActiveSelection();
+	}
+
+	/**
+	 * Clear the TUI-level selection highlight (anchor/focus state) and request a re-render.
+	 * Shared by the cut path and both copy paths so the highlight always disappears after the action.
+	 */
+	private clearActiveSelection(): void {
 		const tui = this.tui as typeof this.tui & { clearTextSelection?: () => void };
 		if (tui && typeof tui.clearTextSelection === "function") {
 			tui.clearTextSelection();
@@ -294,6 +302,8 @@ export class StylizedDesignEditor extends CustomEditor {
 			if (selection?.selectedText) {
 				void copyToClipboard(selection.selectedText);
 				tui?.flash?.(t("editor.copied"));
+				// Clear the selection highlight after copying, returning to the natural no-selection state
+				this.clearActiveSelection();
 				return;
 			}
 
@@ -301,6 +311,8 @@ export class StylizedDesignEditor extends CustomEditor {
 			if (tui && typeof tui.hasActiveSelection === "function" && tui.hasActiveSelection()) {
 				if (typeof tui.copyActiveSelectionToClipboard === "function") {
 					void tui.copyActiveSelectionToClipboard();
+					// Clear the selection highlight after copying, returning to the natural no-selection state
+					this.clearActiveSelection();
 					return;
 				}
 			}
