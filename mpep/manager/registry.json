@@ -42,6 +42,13 @@
     "enabled": true
   },
   {
+    "id": "theme-distributor",
+    "name": "MPEP 蓝色主题分发",
+    "path": "./theme-distributor.ts",
+    "desc": "首次加载自动安装并选中 mpep-blue 主题，禁用即卸载并还原原主题",
+    "enabled": true
+  },
+  {
     "id": "usage",
     "name": "Token 消耗与成本历史分析 (/m-usg)",
     "path": "./usage/index.ts",

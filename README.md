@@ -46,6 +46,12 @@ Token usage, costs, daily totals and model price editing.
 
 ![Daily usage](assets/usage-daily.png)
 
+### Theme Distributor
+
+Ships the bundled `mpep-blue` theme. On first load it installs the theme into `~/.pi/agent/themes/` and selects it automatically. The installation is one-shot: if the theme file already exists, your manual theme choice is never overridden.
+
+Disabling the plugin through `/m-mng` uninstalls it: the theme file is removed and the previously selected theme is restored (falls back to Pi's default `dark`).
+
 ### Keyboard Shortcuts
 
 - Ctrl+C no longer clears the input box text.

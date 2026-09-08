@@ -1,9 +1,16 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { t } from "../shared/i18n/index.ts";
 import { loadRegistry, writePluginStates, type RegistryItem } from "./preferences.ts";
+import { installTheme, uninstallTheme } from "../theme-distributor.ts";
 
 // Registry IDs and fallback metadata stay compatible with existing installations.
-const builtinIds = ["stylized-design", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage"] as const;
+const builtinIds = ["stylized-design", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage", "theme-distributor"] as const;
+
+// Lifecycle hooks: some plugins own files outside mpep-cache and must clean up
+// (or set up) when toggled, instead of just self-gating on next load.
+const toggleHooks: Partial<Record<string, () => string | undefined>> = {
+	"theme-distributor": (target) => target ? installTheme() : uninstallTheme(),
+};
 function display(item: RegistryItem): { name: string; desc: string } {
 	const id = builtinIds.find(id => id === item.id);
 	return id ? { name: t(`plugin.${id}.name`), desc: t(`plugin.${id}.desc`) } : item;
@@ -41,6 +48,7 @@ async function handleManagerCommand(args: string, ctx: ExtensionCommandContext):
 		}
 		target.enabled = subCommand === "enable";
 		writePluginStates({ [target.id]: target.enabled });
+		toggleHooks[target.id]?.(target.enabled);
 		ctx.ui.notify(t("manager.toggled", { state: t(target.enabled ? "manager.enabled" : "manager.disabled"), name: display(target).name }), "info");
 		return;
 	}
@@ -92,6 +100,7 @@ async function handleManagerCommand(args: string, ctx: ExtensionCommandContext):
 		if (target) {
 			target.enabled = !target.enabled;
 			writePluginStates({ [target.id]: target.enabled });
+			toggleHooks[target.id]?.(target.enabled);
 			hasChanged = true;
 		}
 	}

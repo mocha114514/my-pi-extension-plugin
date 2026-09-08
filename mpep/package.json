@@ -21,6 +21,7 @@
       "./fullscreen-scroll.ts",
       "./statusline.ts",
       "./tps.ts",
+      "./theme-distributor.ts",
       "./usage/index.ts"
     ]
   }
