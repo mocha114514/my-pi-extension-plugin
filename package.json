@@ -7,10 +7,10 @@
     "type": "git",
     "url": "https://github.com/mocha114514/my-pi-extension-plugin.git"
   },
-  "description": "Mocha extensions for Pi: install from Git or use the standalone mocha directory",
+  "description": "MPEP extensions for Pi: install from Git or use the standalone mpep directory",
   "keywords": ["pi-package"],
-  "workspaces": ["mocha"],
+  "workspaces": ["mpep"],
   "pi": {
-    "extensions": ["./mocha"]
+    "extensions": ["./mpep"]
   }
 }

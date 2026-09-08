@@ -34,7 +34,7 @@ export function readLanguageMode(path: string): LanguageMode {
   return (readSettings(path).language as LanguageMode | undefined) ?? "auto";
 }
 
-/** Re-read before writing so other Mocha preferences survive a language change. */
+/** Re-read before writing so other MPEP preferences survive a language change. */
 export function writeLanguageMode(path: string, mode: LanguageMode): void {
   if (!isLanguageMode(mode)) throw new LanguageSettingsError("format");
   const settings = readSettings(path);

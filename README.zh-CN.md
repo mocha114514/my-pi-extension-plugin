@@ -1,4 +1,4 @@
-# Mocha
+# MPEP
 
 [English](README.md) | 简体中文
 
@@ -69,7 +69,7 @@ pi update git:github.com/mocha114514/my-pi-extension-plugin
 pi remove git:github.com/mocha114514/my-pi-extension-plugin
 ```
 
-然后手动删除 `~/.pi/agent/mocha-cache/` 即可彻底清理。
+然后手动删除 `~/.pi/agent/mpep-cache/` 即可彻底清理。
 
 ### 常用指令
 
@@ -82,7 +82,7 @@ pi remove git:github.com/mocha114514/my-pi-extension-plugin
 
 ### 数据位置
 
-- 配置、插件开关和用量数据统一保存在 **`~/.pi/agent/mocha-cache/`**，与安装目录分离。设置 `PI_CODING_AGENT_DIR` 时会跟随该目录；项目级安装也使用同一用户数据目录。
+- 配置、插件开关和用量数据统一保存在 **`~/.pi/agent/mpep-cache/`**，与安装目录分离。设置 `PI_CODING_AGENT_DIR` 时会跟随该目录；项目级安装也使用同一用户数据目录。
 
 ## License
 

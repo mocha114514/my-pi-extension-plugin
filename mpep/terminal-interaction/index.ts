@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { isPluginEnabled } from "../mocha-manager/preferences.ts";
+import { isPluginEnabled } from "../manager/preferences.ts";
 import { setupEditorEnhancements } from "./terminal_editor_enhancer.ts";
 
 // Standalone plugin: terminal input-editor interaction enhancements

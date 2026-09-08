@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { getMochaDir } from "../paths.ts";
+import { getCacheDir } from "../paths.ts";
 import { resolveLocale, type LanguageMode, type Locale } from "./detect.ts";
 import { en } from "./locales/en.ts";
 import { zhCN } from "./locales/zh-CN.ts";
@@ -14,9 +14,9 @@ interface LanguageState { path: string; mode: LanguageMode; locale: Locale; erro
 
 // Pi can evaluate a shared import once per extension. The symbol keeps those copies
 // synchronized, while reloadLanguageSettings refreshes preferences on /reload.
-const stateKey = Symbol.for("mocha.i18n.state.v1");
+const stateKey = Symbol.for("mpep.i18n.state.v1");
 const shared = globalThis as typeof globalThis & { [stateKey]?: LanguageState };
-const settingsPath = () => join(getMochaDir(), "settings.json");
+const settingsPath = () => join(getCacheDir(), "settings.json");
 const resolve = (mode: LanguageMode) => resolveLocale(mode, process.env, Intl.DateTimeFormat().resolvedOptions().locale);
 
 export function reloadLanguageSettings(): LanguageState {

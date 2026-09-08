@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Markdown, type MarkdownTheme, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
-const patchSlot = Symbol.for("mocha.stylized-design.markdown-patches");
+const patchSlot = Symbol.for("mpep.stylized-design.markdown-patches");
 const patches = globalThis as unknown as Record<symbol, (() => void) | undefined>;
 
 /**

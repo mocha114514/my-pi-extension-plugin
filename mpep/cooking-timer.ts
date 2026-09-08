@@ -2,13 +2,13 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 import { formatElapsed } from "./cooking-timer/history.ts";
 import { createCookedWidget } from "./cooking-timer/widget.ts";
 import { t } from "./shared/i18n/index.ts";
-import { isPluginEnabled } from "./mocha-manager/preferences.ts";
+import { isPluginEnabled } from "./manager/preferences.ts";
 
 const COOKING_FRAMES = [".", ".", "·", "·", "∘", "∘", "°", "o", "o", "O", "O"];
 const FRAME_INTERVAL_MS = 120;
 const SHIMMER_INTERVAL_MS = 80;
-const WIDGET_KEY = "mocha-cooked-duration";
-const SLOT = Symbol.for("mocha.cooking-timer.dispose");
+const WIDGET_KEY = "cooked-duration";
+const SLOT = Symbol.for("mpep.cooking-timer.dispose");
 const installations = globalThis as unknown as Record<symbol, (() => void) | undefined>;
 
 export default function (pi: ExtensionAPI) {

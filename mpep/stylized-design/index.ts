@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { isPluginEnabled } from "../mocha-manager/preferences.ts";
+import { isPluginEnabled } from "../manager/preferences.ts";
 import { registerBuiltInTools } from "./builtin_tools_override.ts";
 import { separateCookingProcess } from "./cooking_process_state.ts";
 import { applyPatches } from "./core_components_patcher.ts";

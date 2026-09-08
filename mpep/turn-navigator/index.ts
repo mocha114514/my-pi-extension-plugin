@@ -1,9 +1,9 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { isPluginEnabled } from "../mocha-manager/preferences.ts";
+import { isPluginEnabled } from "../manager/preferences.ts";
 import { installNavigator } from "./viewport-adapter.ts";
 
-const SLOT = Symbol.for("mocha.turn-navigator.dispose");
-const BRIDGE = "mocha-turn-navigator-bridge";
+const SLOT = Symbol.for("mpep.turn-navigator.dispose");
+const BRIDGE = "turn-navigator-bridge";
 const installations = globalThis as unknown as Record<symbol, (() => void) | undefined>;
 
 export default function turnNavigator(pi: ExtensionAPI): void {

@@ -38,7 +38,7 @@ export function createEditorStatus(tui: TUI, label: () => string): { sync(): boo
 			current = editor;
 			if (!editor) return false;
 			// Pi has no idle-border API. Wrap only this editor instance, preserving the
-			// native layout/overflow rules and the Mocha editor's own confirmation border.
+			// native layout/overflow rules and the MPEP editor's own confirmation border.
 			const internals = editor as unknown as EditorInternals;
 			const original = internals.renderTopBorder;
 			const descriptor = Object.getOwnPropertyDescriptor(editor, "renderTopBorder");

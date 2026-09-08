@@ -1,5 +1,5 @@
 import { t } from "./shared/i18n/index.ts";
-import { getMochaDir } from "./shared/paths.ts";
+import { getCacheDir } from "./shared/paths.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
@@ -8,7 +8,7 @@ import { gzipSync, gunzipSync } from "node:zlib";
 import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { ScrollView, Text, truncateToWidth, type TuiMouseEvent, visibleWidth } from "@earendil-works/pi-tui";
 
-const cacheRoot = () => path.join(getMochaDir(), "legacy-usage");
+const cacheRoot = () => path.join(getCacheDir(), "legacy-usage");
 
 /**
  * Cache data structure: compact per-call record
@@ -477,8 +477,8 @@ function renderUsageReport(data: UsageReportData, theme: Theme, width = 100): Te
 	return new Text(output, 1, 0);
 }
 
-export default function mochaUsageExtension(pi: ExtensionAPI) {
-	pi.registerEntryRenderer<UsageReportData>("mocha-usage", (entry, _options, theme) => {
+export default function usageExtension(pi: ExtensionAPI) {
+	pi.registerEntryRenderer<UsageReportData>("usage", (entry, _options, theme) => {
 		return entry.data ? renderUsageReport(entry.data, theme) : undefined;
 	});
 

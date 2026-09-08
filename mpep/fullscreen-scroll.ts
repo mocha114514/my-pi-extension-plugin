@@ -1,7 +1,7 @@
 import { t } from "./shared/i18n/index.ts";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-const WIDGET_KEY = "mocha-fullscreen-scroll";
+const WIDGET_KEY = "fullscreen-scroll";
 const SCROLL_LINES = 3;
 
 export default function fullscreenScroll(pi: ExtensionAPI): void {
@@ -16,7 +16,7 @@ export default function fullscreenScroll(pi: ExtensionAPI): void {
 			WIDGET_KEY,
 			(tui) => {
 				// The TUI proxy follows renderer replacements, so save the original on each renderer.
-				const originalKey = Symbol("mocha.fullscreen-scroll.original");
+				const originalKey = Symbol("mpep.fullscreen-scroll.original");
 				let active = true;
 				let reportedMissingField = false;
 

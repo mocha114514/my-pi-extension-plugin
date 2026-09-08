@@ -3,9 +3,9 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { t } from "../shared/i18n/index.ts";
-import { getMochaDir } from "../shared/paths.ts";
+import { getCacheDir } from "../shared/paths.ts";
 
-export interface MochaRegistryItem {
+export interface RegistryItem {
 	id: string;
 	name: string;
 	path: string;
@@ -21,8 +21,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function readRegistry(): MochaRegistryItem[] {
-	const file = fileURLToPath(new URL("./mocha-registry.json", import.meta.url));
+export function readRegistry(): RegistryItem[] {
+	const file = fileURLToPath(new URL("./registry.json", import.meta.url));
 	const value: unknown = JSON.parse(readFileSync(file, "utf8"));
 	if (!Array.isArray(value) || !value.every(item => isRecord(item) &&
 		["id", "name", "path", "desc"].every(key => typeof item[key] === "string") && typeof item.enabled === "boolean") ||
@@ -43,7 +43,7 @@ function readPreferences(file: string): Preferences | undefined {
 }
 
 export function writePluginStates(changes: Record<string, boolean>): void {
-	const file = join(getMochaDir(), "plugins.json");
+	const file = join(getCacheDir(), "plugins.json");
 	const previous = readPreferences(file) ?? { version: 1, enabled: {} };
 	const next = { ...previous, enabled: { ...previous.enabled, ...changes } };
 	const temporary = `${file}.${randomUUID()}.tmp`;
@@ -54,9 +54,9 @@ export function writePluginStates(changes: Record<string, boolean>): void {
 	} finally { rmSync(temporary, { force: true }); }
 }
 
-export function loadRegistry(): MochaRegistryItem[] {
+export function loadRegistry(): RegistryItem[] {
 	const items = readRegistry();
-	const preferences = readPreferences(join(getMochaDir(), "plugins.json"));
+	const preferences = readPreferences(join(getCacheDir(), "plugins.json"));
 	return items.map(item => ({ ...item, enabled: preferences && Object.hasOwn(preferences.enabled, item.id)
 		? preferences.enabled[item.id] : item.enabled }));
 }

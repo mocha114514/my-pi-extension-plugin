@@ -1,10 +1,10 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { t } from "../shared/i18n/index.ts";
-import { loadRegistry, writePluginStates, type MochaRegistryItem } from "./preferences.ts";
+import { loadRegistry, writePluginStates, type RegistryItem } from "./preferences.ts";
 
 // Registry IDs and fallback metadata stay compatible with existing installations.
 const builtinIds = ["stylized-design", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage"] as const;
-function display(item: MochaRegistryItem): { name: string; desc: string } {
+function display(item: RegistryItem): { name: string; desc: string } {
 	const id = builtinIds.find(id => id === item.id);
 	return id ? { name: t(`plugin.${id}.name`), desc: t(`plugin.${id}.desc`) } : item;
 }
@@ -101,7 +101,7 @@ async function handleManagerCommand(args: string, ctx: ExtensionCommandContext):
 	}
 }
 
-export default function mochaManagerExtension(pi: ExtensionAPI) {
+export default function managerExtension(pi: ExtensionAPI) {
 	pi.registerCommand("m-mng", {
 		description: t("manager.description"),
 		handler: async (args, ctx) => {

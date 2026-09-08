@@ -1,6 +1,6 @@
 import { t } from "../shared/i18n/index.ts";
-import { isPluginEnabled } from "../mocha-manager/preferences.ts";
-import { getMochaDir } from "../shared/paths.ts";
+import { isPluginEnabled } from "../manager/preferences.ts";
+import { getCacheDir } from "../shared/paths.ts";
 import { join } from "node:path";
 import {
 	type ExtensionAPI,
@@ -18,7 +18,7 @@ import { UsageJob, UsageUI } from "./ui.ts";
 
 export default function usageExtension(pi: ExtensionAPI): void {
 	if (!isPluginEnabled("usage")) return;
-	const root = join(getMochaDir(), "usage");
+	const root = join(getCacheDir(), "usage");
 	const modelsFile = join(getAgentDir(), "models.json");
 	let activeContext: ExtensionContext | undefined;
 	const sync = new PriceSync(root, modelsFile, async () => {

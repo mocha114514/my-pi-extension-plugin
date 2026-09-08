@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { getLocale, t } from "./shared/i18n/index.ts";
-import { isPluginEnabled } from "./mocha-manager/preferences.ts";
+import { isPluginEnabled } from "./manager/preferences.ts";
 
 export default function (pi: ExtensionAPI) {
 	if (!isPluginEnabled("tps")) return;

@@ -1,4 +1,4 @@
-# Mocha
+# MPEP
 
 English | [简体中文](README.zh-CN.md)
 
@@ -69,7 +69,7 @@ pi update git:github.com/mocha114514/my-pi-extension-plugin
 pi remove git:github.com/mocha114514/my-pi-extension-plugin
 ```
 
-Then manually delete `~/.pi/agent/mocha-cache/` if you want a full cleanup.
+Then manually delete `~/.pi/agent/mpep-cache/` if you want a full cleanup.
 
 ### Commands
 
@@ -82,7 +82,7 @@ Then manually delete `~/.pi/agent/mocha-cache/` if you want a full cleanup.
 
 ### Data Location
 
-- Configuration, plugin switches and usage data are stored in **`~/.pi/agent/mocha-cache/`**, separate from the installation directory. Follows `PI_CODING_AGENT_DIR` when set; project-level installations also use the same user data directory.
+- Configuration, plugin switches and usage data are stored in **`~/.pi/agent/mpep-cache/`**, separate from the installation directory. Follows `PI_CODING_AGENT_DIR` when set; project-level installations also use the same user data directory.
 
 ## License
 

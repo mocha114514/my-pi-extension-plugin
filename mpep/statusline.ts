@@ -4,7 +4,7 @@ import { promisify } from "node:util";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { t } from "./shared/i18n/index.ts";
-import { isPluginEnabled } from "./mocha-manager/preferences.ts";
+import { isPluginEnabled } from "./manager/preferences.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -19,7 +19,7 @@ const ORANGE = "\x1b[38;5;214m"; // Context warning (>80%)
 const RED_BRIGHT = "\x1b[91m"; // Context danger (>95%)
 const RESET = "\x1b[0m";
 
-const MODEL_WIDGET_KEY = "mocha-model-info";
+const MODEL_WIDGET_KEY = "model-info";
 const REFRESH_INTERVAL_MS = 1000;
 
 function formatTokens(count: number): string {
