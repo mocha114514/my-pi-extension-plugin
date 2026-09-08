@@ -10,13 +10,23 @@ export function navigationBand(viewportHeight: number): { top: number; height: n
 	return { top: Math.min(Math.floor(available * 0.3), available - height), height };
 }
 
-export function activeTurn(anchors: readonly TurnAnchor[], scrollTop: number): number {
+/**
+ * Index of the turn owning the viewport's focus line.
+ *
+ * The focus line sits at the vertical middle of the viewport, so a turn becomes
+ * active as soon as its header enters the upper half of the screen (matches the
+ * intuitive "the turn I am looking at" feeling, and lights up the streaming turn
+ * much earlier than a top-edge rule). With viewportHeight = 0 the focus line
+ * degenerates to the viewport top edge (legacy behavior).
+ */
+export function activeTurn(anchors: readonly TurnAnchor[], scrollTop: number, viewportHeight = 0): number {
 	if (anchors.length === 0) return -1;
+	const focus = scrollTop + Math.floor(Math.max(0, viewportHeight) / 2);
 	let low = 0;
 	let high = anchors.length;
 	while (low < high) {
 		const middle = (low + high) >>> 1;
-		if (anchors[middle].row <= scrollTop) low = middle + 1;
+		if (anchors[middle].row <= focus) low = middle + 1;
 		else high = middle;
 	}
 	return Math.max(0, low - 1);

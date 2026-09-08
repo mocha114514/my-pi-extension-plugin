@@ -193,12 +193,18 @@ class ViewportAttachment {
 			this.scrollView.getContentWidth(scrollBox.rect.width),
 			scrollBox.scrollContentLines?.length ?? 0,
 		);
-		let active = activeTurn(this.anchors, this.scrollView.scrollTop);
+		let active = activeTurn(this.anchors, this.scrollView.scrollTop, this.scrollView.viewportHeight);
 		const maxTop = Math.max(0, (scrollBox.scrollContentLines?.length ?? 0) - this.scrollView.viewportHeight);
 		const selected = this.anchors.findIndex((anchor) => anchor.key === this.selectedKey);
-		// A short final prompt cannot reach the top; keep the explicitly selected, visible target active.
-		if (selected >= 0 && this.anchors[selected].row > maxTop && this.scrollView.scrollTop === maxTop) active = selected;
-		else this.selectedKey = undefined;
+		if (selected >= 0 && this.anchors[selected].row > maxTop && this.scrollView.scrollTop === maxTop) {
+			// A short final prompt cannot reach the top; keep the explicitly selected, visible target active.
+			active = selected;
+		} else {
+			this.selectedKey = undefined;
+			// Scrolled to the very end: the last turn owns the transcript tail even when its
+			// header can never cross the focus line (short final turn / streaming follow).
+			if (this.scrollView.scrollTop >= maxTop && this.anchors.length > 0) active = this.anchors.length - 1;
+		}
 		if (this.panel.update(this.anchors, active, panelBox.clip.height)) {
 			this.hidePreview();
 			this.tui.requestRender();
