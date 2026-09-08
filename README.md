@@ -69,6 +69,14 @@ pi install git:github.com/mocha114514/my-pi-extension-plugin
 pi update git:github.com/mocha114514/my-pi-extension-plugin
 ```
 
+### Uninstall
+
+```bash
+pi remove git:github.com/mocha114514/my-pi-extension-plugin
+```
+
+Then manually delete `~/.pi/agent/mocha-cache/` if you want a full cleanup.
+
 ### Commands
 
 | Command              | Purpose                                        |
@@ -144,6 +152,14 @@ Token 用量、费用、每日汇总和模型价格编辑。
 pi install git:github.com/mocha114514/my-pi-extension-plugin
 pi update git:github.com/mocha114514/my-pi-extension-plugin
 ```
+
+### 卸载
+
+```bash
+pi remove git:github.com/mocha114514/my-pi-extension-plugin
+```
+
+然后手动删除 `~/.pi/agent/mocha-cache/` 即可彻底清理。
 
 ### 常用指令
 
