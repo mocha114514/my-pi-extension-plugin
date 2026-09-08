@@ -7,6 +7,10 @@
 完全依赖于 pi 自身的扩展机制，零源码修改，轻量装卸。
 
 > **强烈建议在 pi 的全屏模式（在 `/settings` 的 TUI mode 中选择 full screen）下配合使用该插件，以获得最好效果。**
+>
+> 以此参照设置最佳
+>
+> ![Fullscreen settings](assets/fullscreen-settings.png)
 
 ### 界面优化
 

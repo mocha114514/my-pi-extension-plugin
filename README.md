@@ -7,6 +7,10 @@ A lightweight extension suite that polishes Pi's shell interface.
 Built entirely on Pi's own extension mechanism — zero source modification, easy to attach and remove.
 
 > **Fullscreen mode strongly recommended** (set TUI mode to full screen in `/settings`) for the best experience.
+>
+> Use this as a reference for the recommended settings.
+>
+> <img src="assets/fullscreen-settings.png" alt="Fullscreen settings"  />
 
 ### Interface Optimization
 
