@@ -8,8 +8,10 @@ const builtinIds = ["stylized-design", "markdown-enhancer", "terminal-interactio
 
 // Lifecycle hooks: some plugins own files outside mpep-cache and must clean up
 // (or set up) when toggled, instead of just self-gating on next load.
-const toggleHooks: Partial<Record<string, () => string | undefined>> = {
-	"theme-distributor": (target) => target ? installTheme() : uninstallTheme(),
+// Hooks receive the new enabled state of the toggled plugin.
+type ToggleHook = (enabled: boolean) => string | undefined;
+const toggleHooks: Partial<Record<string, ToggleHook>> = {
+	"theme-distributor": (enabled) => enabled ? installTheme() : uninstallTheme(),
 };
 function display(item: RegistryItem): { name: string; desc: string } {
 	const id = builtinIds.find(id => id === item.id);
