@@ -1,7 +1,11 @@
+// Standalone Markdown rendering enhancer, originally part of stylized-design.
+// Self-contained: only depends on Pi's public extension API and pi-tui, so it
+// can be toggled independently via the markdown-enhancer plugin entry.
+
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Markdown, type MarkdownTheme, visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
-const patchSlot = Symbol.for("mpep.stylized-design.markdown-patches");
+const patchSlot = Symbol.for("mpep.markdown-enhancer.markdown-patches");
 const patches = globalThis as unknown as Record<symbol, (() => void) | undefined>;
 
 /**

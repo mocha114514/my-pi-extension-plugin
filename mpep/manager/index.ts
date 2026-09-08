@@ -4,7 +4,7 @@ import { loadRegistry, writePluginStates, type RegistryItem } from "./preference
 import { installTheme, uninstallTheme } from "../theme-distributor.ts";
 
 // Registry IDs and fallback metadata stay compatible with existing installations.
-const builtinIds = ["stylized-design", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage", "theme-distributor"] as const;
+const builtinIds = ["stylized-design", "markdown-enhancer", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage", "theme-distributor"] as const;
 
 // Lifecycle hooks: some plugins own files outside mpep-cache and must clean up
 // (or set up) when toggled, instead of just self-gating on next load.

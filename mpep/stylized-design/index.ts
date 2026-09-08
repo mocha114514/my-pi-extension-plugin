@@ -3,7 +3,6 @@ import { isPluginEnabled } from "../manager/preferences.ts";
 import { registerBuiltInTools } from "./builtin_tools_override.ts";
 import { separateCookingProcess } from "./cooking_process_state.ts";
 import { applyPatches } from "./core_components_patcher.ts";
-import { setupMarkdownEnhancements } from "./markdown_rendering_enhancer.ts";
 import { setupMcpCoordinator } from "./mcp_tools_coordinator.ts";
 import { resetMouseTiming } from "./mouse_interaction_handler.ts";
 // Note: editor/keyboard enhancements were extracted into the standalone
@@ -22,7 +21,8 @@ import {
 export default function (pi: ExtensionAPI): void {
 	if (!isPluginEnabled("stylized-design")) return;
 	const disposePatches = applyPatches();
-	const disposeMarkdown = setupMarkdownEnhancements(pi);
+	// Note: Markdown rendering enhancements were extracted into the standalone
+	// "markdown-enhancer" plugin (see ../markdown-enhancer/).
 	const disposeMcp = setupMcpCoordinator();
 	registerBuiltInTools(pi);
 	const restoreSession = (_event: unknown, ctx: ExtensionContext) => {
@@ -52,7 +52,6 @@ export default function (pi: ExtensionAPI): void {
 	pi.on("tool_execution_end", (event) => observeToolResult(event.toolCallId, event.result, false, event.isError));
 	pi.on("agent_end", endLiveCollection);
 	pi.on("session_shutdown", () => {
-		disposeMarkdown();
 		disposePatches();
 		disposeMcp();
 		resetTurnState();

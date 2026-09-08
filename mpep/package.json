@@ -15,6 +15,7 @@
       "./language.ts",
       "./manager/index.ts",
       "./stylized-design/index.ts",
+      "./markdown-enhancer/index.ts",
       "./terminal-interaction/index.ts",
       "./turn-navigator/index.ts",
       "./cooking-timer.ts",
