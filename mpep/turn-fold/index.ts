@@ -1,7 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isPluginEnabled } from "../manager/preferences.ts";
 import { registerBuiltInTools } from "./builtin_tools_override.ts";
-import { separateCookingProcess } from "./cooking_process_state.ts";
+import { separateProcessFold } from "./process_fold_state.ts";
 import { applyPatches } from "./core_components_patcher.ts";
 import { setupMcpCoordinator } from "./mcp_tools_coordinator.ts";
 import { resetMouseTiming } from "./mouse_interaction_handler.ts";
@@ -19,7 +19,7 @@ import {
 } from "./turn_state_manager.ts";
 
 export default function (pi: ExtensionAPI): void {
-	if (!isPluginEnabled("stylized-design")) return;
+	if (!isPluginEnabled("turn-fold")) return;
 	const disposePatches = applyPatches();
 	// Note: Markdown rendering enhancements were extracted into the standalone
 	// "markdown-enhancer" plugin (see ../markdown-enhancer/).
@@ -37,7 +37,7 @@ export default function (pi: ExtensionAPI): void {
 		if (event.message.role === "assistant") observeAssistant(event.message, true);
 		else if (event.message.role !== "toolResult") {
 			sealActiveGroup();
-			separateCookingProcess();
+			separateProcessFold();
 		}
 	});
 	pi.on("message_update", (event) => {

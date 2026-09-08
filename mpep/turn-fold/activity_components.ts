@@ -17,7 +17,7 @@ import {
 	truncateToWidth,
 	visibleWidth,
 } from "@earendil-works/pi-tui";
-import { createCookingBody, createCookingHeader, createCookingSeparator } from "./cooking_process_components.ts";
+import { createProcessFoldBody, createProcessFoldHeader, createProcessFoldSeparator } from "./process_fold_components.ts";
 import { createSummaryMouseRegion, isBlankDoubleClick } from "./mouse_interaction_handler.ts";
 import {
 	formatPreview,
@@ -184,10 +184,10 @@ export function installActivityComponents(): () => void {
 		const fold = process?.fold;
 		if (process && fold?.anchorMessageId === state.id) {
 			internals.contentContainer.addChild(new Spacer(1));
-			internals.contentContainer.addChild(createCookingHeader(process));
+			internals.contentContainer.addChild(createProcessFoldHeader(process));
 		}
 		const body = new Container();
-		if (process && fold && process.expanded) internals.contentContainer.addChild(createCookingBody(body, process));
+		if (process && fold && process.expanded) internals.contentContainer.addChild(createProcessFoldBody(body, process));
 		for (let index = 0; index < state.parts.length; index++) {
 			const part = state.parts[index];
 			const isFinal = fold?.finalMessageId === state.id && index >= fold.finalPartIndex;
@@ -195,7 +195,7 @@ export function installActivityComponents(): () => void {
 			const container = fold && !isFinal ? body : internals.contentContainer;
 			if (fold?.finalMessageId === state.id && index === fold.finalPartIndex) {
 				container.addChild(new Spacer(1));
-				container.addChild(createCookingSeparator());
+				container.addChild(createProcessFoldSeparator());
 			}
 			if (part.type === "group") {
 				const group = turnStates.get(part.groupId);

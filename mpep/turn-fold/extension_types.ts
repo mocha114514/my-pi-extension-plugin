@@ -44,11 +44,11 @@ export interface MessageState {
 	parts: MessagePart[];
 	blocks: Map<number, ThinkingRecord | "text" | "tool">;
 	finished: boolean;
-	process?: CookingProcessState;
+	process?: ProcessFoldState;
 	refresh?: () => void;
 }
 
-export interface CookingProcessState {
+export interface ProcessFoldState {
 	messages: MessageState[];
 	expanded: boolean;
 	fold?: {

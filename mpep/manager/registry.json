@@ -1,8 +1,8 @@
 [
   {
-    "id": "stylized-design",
-    "name": "UI 极简排版与交互增强",
-    "path": "./stylized-design/index.ts",
+    "id": "turn-fold",
+    "name": "对话轮次折叠与紧凑排版",
+    "path": "./turn-fold/index.ts",
     "desc": "单行折叠计数、Ctrl+O/双击展开详情、细光标保护与 MCP 统一计数",
     "enabled": true
   },

@@ -1,4 +1,4 @@
-// Standalone Markdown rendering enhancer, originally part of stylized-design.
+// Standalone Markdown rendering enhancer, originally part of stylized-design (renamed turn-fold).
 // Self-contained: only depends on Pi's public extension API and pi-tui, so it
 // can be toggled independently via the markdown-enhancer plugin entry.
 

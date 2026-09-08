@@ -1,10 +1,10 @@
-import type { CookingProcessState, MessageState } from "./extension_types.ts";
+import type { ProcessFoldState, MessageState } from "./extension_types.ts";
 
-const processes = new Set<CookingProcessState>();
-const pending = new Set<CookingProcessState>();
-let active: CookingProcessState | undefined;
+const processes = new Set<ProcessFoldState>();
+const pending = new Set<ProcessFoldState>();
+let active: ProcessFoldState | undefined;
 
-export function registerCookingMessage(message: MessageState): void {
+export function registerProcessFoldMessage(message: MessageState): void {
 	if (message.process) return;
 	if (!active) {
 		active = { messages: [], expanded: false };
@@ -16,12 +16,12 @@ export function registerCookingMessage(message: MessageState): void {
 }
 
 /** A user/custom message is a visible boundary, even when queued within one agent run. */
-export function separateCookingProcess(): void {
+export function separateProcessFold(): void {
 	active = undefined;
 }
 
 /** Only agent_end (or a completed history boundary) confirms which text is final. */
-export function completeCookingProcesses(): void {
+export function completeProcessFolds(): void {
 	active = undefined;
 	for (const process of pending) {
 		const last = process.messages.at(-1);
@@ -41,13 +41,13 @@ export function completeCookingProcesses(): void {
 	pending.clear();
 }
 
-export function toggleCookingProcess(process: CookingProcessState): void {
+export function toggleProcessFold(process: ProcessFoldState): void {
 	if (!process.fold) return;
 	process.expanded = !process.expanded;
 	for (const message of process.messages) message.refresh?.();
 }
 
-export function setAllCookingExpanded(expanded: boolean): void {
+export function setAllProcessFoldsExpanded(expanded: boolean): void {
 	for (const process of processes) {
 		if (!process.fold || process.expanded === expanded) continue;
 		process.expanded = expanded;
@@ -55,7 +55,7 @@ export function setAllCookingExpanded(expanded: boolean): void {
 	}
 }
 
-export function resetCookingProcesses(): void {
+export function resetProcessFolds(): void {
 	processes.clear();
 	pending.clear();
 	active = undefined;

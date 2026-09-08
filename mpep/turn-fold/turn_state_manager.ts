@@ -1,10 +1,10 @@
 import type { AssistantMessage, ToolResultMessage } from "@earendil-works/pi-ai";
 import {
-	completeCookingProcesses,
-	registerCookingMessage,
-	resetCookingProcesses,
-	setAllCookingExpanded,
-} from "./cooking_process_state.ts";
+	completeProcessFolds,
+	registerProcessFoldMessage,
+	resetProcessFolds,
+	setAllProcessFoldsExpanded,
+} from "./process_fold_state.ts";
 import type { MessageState, ToolView, TurnState } from "./extension_types.ts";
 
 export const turnStates = new Map<number, TurnState>();
@@ -20,7 +20,7 @@ let nextMessageId = 0;
 let nextGroupId = 0;
 
 export function resetTurnState(): void {
-	resetCookingProcesses();
+	resetProcessFolds();
 	turnStates.clear();
 	toolCallTurnMap.clear();
 	toolViews.clear();
@@ -65,7 +65,7 @@ export function observeAssistant(message: AssistantMessage, start = false): void
 	let state = start ? undefined : (messages.get(message) ?? activeMessage);
 	if (!state) {
 		state = { id: ++nextMessageId, message, parts: [], blocks: new Map(), finished: false };
-		registerCookingMessage(state);
+		registerProcessFoldMessage(state);
 		const candidates = timestamps.get(message.timestamp) ?? [];
 		candidates.push(state);
 		timestamps.set(message.timestamp, candidates);
@@ -183,7 +183,7 @@ export function endLiveCollection(): void {
 	}
 	sealActiveGroup();
 	activeMessage = undefined;
-	completeCookingProcesses();
+	completeProcessFolds();
 }
 
 export function finishAssistant(message: AssistantMessage): void {
@@ -213,7 +213,7 @@ export function syncFromSessionHistory(
 	for (const entry of entries) {
 		if (entry.type === "compaction" || entry.type === "branch_summary" || entry.type === "custom_message") {
 			sealActiveGroup();
-			completeCookingProcesses();
+			completeProcessFolds();
 		}
 		if (entry.type !== "message" || !entry.message || typeof entry.message !== "object" || !("role" in entry.message))
 			continue;
@@ -225,7 +225,7 @@ export function syncFromSessionHistory(
 			observeToolResult(result.toolCallId, result, false, result.isError);
 		} else {
 			sealActiveGroup();
-			completeCookingProcesses();
+			completeProcessFolds();
 		}
 	}
 	if (!isRunning) endLiveCollection();
@@ -255,7 +255,7 @@ export function setAllGlobalExpanded(expanded: boolean): void {
 	}
 	for (const view of toolViews.values()) view.setExpanded(false);
 	for (const refresh of refreshes) refresh();
-	setAllCookingExpanded(expanded);
+	setAllProcessFoldsExpanded(expanded);
 }
 
 export function toggleToolExpanded(toolCallId: string): void {

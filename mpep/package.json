@@ -14,7 +14,7 @@
     "extensions": [
       "./language.ts",
       "./manager/index.ts",
-      "./stylized-design/index.ts",
+      "./turn-fold/index.ts",
       "./markdown-enhancer/index.ts",
       "./terminal-interaction/index.ts",
       "./turn-navigator/index.ts",

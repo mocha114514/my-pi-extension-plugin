@@ -5,7 +5,7 @@ import { installActivityComponents } from "./activity_components.ts";
 import { isCompactionDoubleClick } from "./mouse_interaction_handler.ts";
 import { safeThemeBold, safeThemeFg } from "./summary_preview_renderer.ts";
 
-const patchSlot = Symbol.for("mpep.stylized-design.patches");
+const patchSlot = Symbol.for("mpep.turn-fold.patches");
 const patches = globalThis as unknown as Record<symbol, (() => void) | undefined>;
 export function applyPatches(): () => void {
 	patches[patchSlot]?.();
