@@ -230,6 +230,180 @@ function applyBoldPatch(): () => void {
 }
 
 /**
+ * Patch Markdown.prototype.renderTable at runtime to render tables as classic
+ * "three-line" (booktabs-style) tables: a heavy top rule, a thin rule under
+ * the header, a heavy bottom rule, and no vertical lines / row separators.
+ * Column width computation, cell wrapping and narrow-width fallbacks are kept
+ * 1:1 with Pi's native table renderer (pi/packages/tui/src/components/markdown.ts
+ * renderTable), so only the border output differs from the default style.
+ */
+function applyTablePatch(): () => void {
+	const proto = Markdown.prototype as any;
+	let active = true;
+
+	const originalRenderTable = proto.renderTable;
+
+	proto.renderTable = function (token: any, availableWidth: number, nextTokenType?: string, styleContext?: any): string[] {
+		if (!active) {
+			return originalRenderTable.call(this, token, availableWidth, nextTokenType, styleContext);
+		}
+		try {
+			const numCols = token.header.length;
+			if (numCols === 0) {
+				return originalRenderTable.call(this, token, availableWidth, nextTokenType, styleContext);
+			}
+
+			// Layout: " cellA  cellB " -> 2 edge padding chars + 2 gap chars per column gap.
+			// (Native uses "│ " / " │ " borders = 3n + 1; three-line tables only need 2n + 2.)
+			const borderOverhead = 2 * numCols + 2;
+			const availableForCells = availableWidth - borderOverhead;
+			if (availableForCells < numCols) {
+				// Too narrow to render a stable table. Fall back to Pi's native renderer.
+				return originalRenderTable.call(this, token, availableWidth, nextTokenType, styleContext);
+			}
+
+			const maxUnbrokenWordWidth = 30;
+
+			// --- Column width computation, kept identical to Pi's native table renderer ---
+			const naturalWidths: number[] = [];
+			const minWordWidths: number[] = [];
+			for (let i = 0; i < numCols; i++) {
+				const headerText = this.renderInlineTokens(token.header[i].tokens || [], styleContext);
+				naturalWidths[i] = visibleWidth(headerText);
+				minWordWidths[i] = Math.max(1, this.getLongestWordWidth(headerText, maxUnbrokenWordWidth));
+			}
+			for (const row of token.rows) {
+				for (let i = 0; i < row.length; i++) {
+					const cellText = this.renderInlineTokens(row[i].tokens || [], styleContext);
+					naturalWidths[i] = Math.max(naturalWidths[i] || 0, visibleWidth(cellText));
+					minWordWidths[i] = Math.max(
+						minWordWidths[i] || 1,
+						this.getLongestWordWidth(cellText, maxUnbrokenWordWidth),
+					);
+				}
+			}
+
+			let minColumnWidths = minWordWidths;
+			let minCellsWidth = minColumnWidths.reduce((a: number, b: number) => a + b, 0);
+
+			if (minCellsWidth > availableForCells) {
+				minColumnWidths = new Array(numCols).fill(1);
+				const remaining = availableForCells - numCols;
+
+				if (remaining > 0) {
+					const totalWeight = minWordWidths.reduce((total: number, width: number) => total + Math.max(0, width - 1), 0);
+					const growth = minWordWidths.map((width: number) => {
+						const weight = Math.max(0, width - 1);
+						return totalWeight > 0 ? Math.floor((weight / totalWeight) * remaining) : 0;
+					});
+
+					for (let i = 0; i < numCols; i++) {
+						minColumnWidths[i] += growth[i] ?? 0;
+					}
+
+					const allocated = growth.reduce((total: number, width: number) => total + width, 0);
+					let leftover = remaining - allocated;
+					for (let i = 0; leftover > 0 && i < numCols; i++) {
+						minColumnWidths[i]++;
+						leftover--;
+					}
+				}
+
+				minCellsWidth = minColumnWidths.reduce((a: number, b: number) => a + b, 0);
+			}
+
+			const totalNaturalWidth = naturalWidths.reduce((a: number, b: number) => a + b, 0) + borderOverhead;
+			let columnWidths: number[];
+
+			if (totalNaturalWidth <= availableWidth) {
+				// Everything fits naturally
+				columnWidths = naturalWidths.map((width: number, index: number) => Math.max(width, minColumnWidths[index]));
+			} else {
+				// Need to shrink columns to fit
+				const totalGrowPotential = naturalWidths.reduce((total: number, width: number, index: number) => {
+					return total + Math.max(0, width - minColumnWidths[index]);
+				}, 0);
+				const extraWidth = Math.max(0, availableForCells - minCellsWidth);
+				columnWidths = minColumnWidths.map((minWidth: number, index: number) => {
+					const naturalWidth = naturalWidths[index];
+					const minWidthDelta = Math.max(0, naturalWidth - minWidth);
+					let grow = 0;
+					if (totalGrowPotential > 0) {
+						grow = Math.floor((minWidthDelta / totalGrowPotential) * extraWidth);
+					}
+					return minWidth + grow;
+				});
+
+				// Adjust for rounding errors - distribute remaining space
+				const allocated = columnWidths.reduce((a: number, b: number) => a + b, 0);
+				let remaining = availableForCells - allocated;
+				while (remaining > 0) {
+					let grew = false;
+					for (let i = 0; i < numCols && remaining > 0; i++) {
+						if (columnWidths[i] < naturalWidths[i]) {
+							columnWidths[i]++;
+							remaining--;
+							grew = true;
+						}
+					}
+					if (!grew) {
+						break;
+					}
+				}
+			}
+
+			// --- Three-line border output ---
+			const columnGap = "  ";
+			const ruleWidth = borderOverhead + columnWidths.reduce((a: number, b: number) => a + b, 0);
+			const heavyRule = "━".repeat(ruleWidth);
+			const thinRule = "─".repeat(ruleWidth);
+
+			const lines: string[] = [];
+
+			// Emit one visual row (possibly multi-line after per-column wrapping).
+			const pushRowLines = (cellLines: string[][], bold: boolean) => {
+				const rowLineCount = Math.max(...cellLines.map((c) => c.length));
+				for (let lineIdx = 0; lineIdx < rowLineCount; lineIdx++) {
+					const parts = cellLines.map((cellColLines, colIdx) => {
+						const text = cellColLines[lineIdx] || "";
+						const padded = text + " ".repeat(Math.max(0, columnWidths[colIdx] - visibleWidth(text)));
+						return bold ? this.theme.bold(padded) : padded;
+					});
+					lines.push(` ${parts.join(columnGap)} `);
+				}
+			};
+
+			const wrapRowCells = (row: any[]): string[][] =>
+				row.map((cell, i) => {
+					const text = this.renderInlineTokens(cell.tokens || [], styleContext);
+					return this.wrapCellText(text, columnWidths[i], styleContext?.stylePrefix);
+				});
+
+			lines.push(heavyRule);
+			pushRowLines(wrapRowCells(token.header), true);
+			lines.push(thinRule);
+			for (const row of token.rows) {
+				pushRowLines(wrapRowCells(row), false);
+			}
+			lines.push(heavyRule);
+
+			if (nextTokenType && nextTokenType !== "space") {
+				lines.push(""); // Add spacing after table
+			}
+			return lines;
+		} catch {
+			return originalRenderTable.call(this, token, availableWidth, nextTokenType, styleContext);
+		}
+	};
+
+	const installed = proto.renderTable;
+	return () => {
+		active = false;
+		if (proto.renderTable === installed) proto.renderTable = originalRenderTable;
+	};
+}
+
+/**
  * Replace ASCII symbols with typographic Unicode characters,
  * strictly skipping inline code blocks wrapped in backticks.
  */
@@ -371,13 +545,14 @@ function enhanceBoldSyntax(text: string): string {
 
 /**
  * Setup Markdown enhancements:
- * - Prototype patches on Markdown component (lists, code blocks, bold text)
+ * - Prototype patches on Markdown component (lists, code blocks, tables, bold text)
  * - Markdown transformer registration (callouts, headings, bold syntax, inline symbols)
  */
 export function setupMarkdownEnhancements(pi: ExtensionAPI): () => void {
 	patches[patchSlot]?.();
 	const disposeList = applyListPatch();
 	const disposeCodeBlock = applyCodeBlockPatch();
+	const disposeTable = applyTablePatch();
 	const disposeBold = applyBoldPatch();
 	let active = true;
 	const dispose = () => {
@@ -385,6 +560,7 @@ export function setupMarkdownEnhancements(pi: ExtensionAPI): () => void {
 		active = false;
 		// Bold wraps renderToken after the code block patch, so unwind in reverse order.
 		disposeBold();
+		disposeTable();
 		disposeCodeBlock();
 		disposeList();
 		if (patches[patchSlot] === dispose) delete patches[patchSlot];
