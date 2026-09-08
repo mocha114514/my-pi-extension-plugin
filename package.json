@@ -1,0 +1,16 @@
+{
+  "name": "my-pi-extension-plugin",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mocha114514/my-pi-extension-plugin.git"
+  },
+  "description": "Mocha extensions for Pi: install from Git or use the standalone mocha directory",
+  "keywords": ["pi-package"],
+  "workspaces": ["mocha"],
+  "pi": {
+    "extensions": ["./mocha"]
+  }
+}

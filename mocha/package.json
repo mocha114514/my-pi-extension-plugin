@@ -1,0 +1,27 @@
+{
+  "name": "mocha-extensions",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Mocha's personal extension suite for Pi",
+  "dependencies": {
+    "jsonc-parser": "3.3.1"
+  },
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./language.ts",
+      "./mocha-manager/index.ts",
+      "./stylized-design/index.ts",
+      "./terminal-interaction/index.ts",
+      "./turn-navigator/index.ts",
+      "./cooking-timer.ts",
+      "./fullscreen-scroll.ts",
+      "./statusline.ts",
+      "./tps.ts",
+      "./usage/index.ts"
+    ]
+  }
+}

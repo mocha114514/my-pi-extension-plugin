@@ -1,0 +1,51 @@
+[
+  {
+    "id": "stylized-design",
+    "name": "UI 极简排版与交互增强",
+    "path": "./stylized-design/index.ts",
+    "desc": "单行折叠计数、Ctrl+O/双击展开详情、细光标保护、Markdown 美化与 MCP 统一计数",
+    "enabled": true
+  },
+  {
+    "id": "terminal-interaction",
+    "name": "终端编辑交互增强",
+    "path": "./terminal-interaction/index.ts",
+    "desc": "输入框选区复制/剪切、Ctrl+C 二次确认退出防误清、跨平台撤销与细条光标",
+    "enabled": true
+  },
+  {
+    "id": "turn-navigator",
+    "name": "对话轮次导航栏",
+    "path": "./turn-navigator/index.ts",
+    "desc": "全屏轮次标记、悬停预览、点击跳转与相邻轮次导航",
+    "enabled": true
+  },
+  {
+    "id": "cooking-timer",
+    "name": "动态烹饪计时器",
+    "path": "./cooking-timer.ts",
+    "desc": "7 帧烹饪剧情动画与自适应进位（天/时/分/秒）实时耗时指示",
+    "enabled": true
+  },
+  {
+    "id": "statusline",
+    "name": "高对比彩色状态栏",
+    "path": "./statusline.ts",
+    "desc": "彩色模型与项目路径信息、Git 分支、Token 容量预警及吃豆人动画计数器",
+    "enabled": true
+  },
+  {
+    "id": "tps",
+    "name": "Token 吞吐率统计 (TPS)",
+    "path": "./tps.ts",
+    "desc": "每轮 Agent 输出结束后，实时计算并通知每秒生成 Token 速度",
+    "enabled": true
+  },
+  {
+    "id": "usage",
+    "name": "Token 消耗与成本历史分析 (/m-usg)",
+    "path": "./usage/index.ts",
+    "desc": "实时记录用量与费用，按天汇总账单，支持后台统计与临时账本清理",
+    "enabled": true
+  }
+]
