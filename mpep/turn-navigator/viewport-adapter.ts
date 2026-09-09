@@ -13,7 +13,7 @@ import {
 	VStack,
 } from "@earendil-works/pi-tui";
 import { NavigationPanel, type NavigatorTheme, PromptPreview } from "./navigation-panel.ts";
-import { activeTurn, navigationBand, type TurnAnchor } from "./turn-index.ts";
+import { activeTurn, NAVIGATOR_COLUMNS, navigationBand, type TurnAnchor } from "./turn-index.ts";
 
 interface Rect {
 	x: number;
@@ -107,7 +107,7 @@ class ViewportAttachment {
 		});
 		this.row = new HStack([
 			{ component: this.scrollView, basis: 0, grow: 1, shrink: 1, minSize: 1 },
-			{ component: this.panel, basis: 3, shrink: 0, visible: ({ width }) => width >= 20 },
+			{ component: this.panel, basis: NAVIGATOR_COLUMNS, shrink: 0, visible: ({ width }) => width >= 20 },
 		]);
 		entries[entryIndex] = { ...this.originalEntry, component: this.row };
 		root.children[entryIndex] = this.row;

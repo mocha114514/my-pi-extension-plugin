@@ -62,21 +62,26 @@ export class NavigationPanel implements Component {
 			const row = screenRow - this.band.top;
 			if (row < 0 || row >= this.band.height) return " ".repeat(width);
 			const index = this.markers.get(row);
-			let text = "";
+			let glyph = "";
 			let enabled = false;
 			if (this.band.height >= 3 && row === 0) {
-				text = "\u25b2";
+				glyph = "\u25b2";
 				enabled = this.active > 0;
 			} else if (this.band.height >= 3 && row === this.band.height - 1) {
-				text = "\u25bc";
+				glyph = "\u25bc";
 				enabled = this.active >= 0 && this.active < this.anchors.length - 1;
 			} else if (index !== undefined) {
-				text = index === this.active ? "\u2550\u2550" : "\u2500\u2500";
+				glyph = index === this.active ? "\u2550\u2550" : "\u2500\u2500";
 				enabled = true;
 			}
-			text = truncateToWidth(text, width, "").padStart(width, " ");
-			if (this.hovered === row && enabled) return theme.bg("selectedBg", theme.fg("accent", text));
-			return theme.fg(index === this.active && index !== undefined ? "accent" : enabled ? "muted" : "dim", text);
+			glyph = truncateToWidth(glyph, width, "");
+			const pad = " ".repeat(Math.max(0, width - visibleWidth(glyph)));
+			if (!glyph) return pad;
+			const painted =
+				this.hovered === row && enabled
+					? theme.bg("selectedBg", theme.fg("accent", glyph))
+					: theme.fg(index === this.active && index !== undefined ? "accent" : enabled ? "muted" : "dim", glyph);
+			return pad + painted;
 		});
 	}
 
