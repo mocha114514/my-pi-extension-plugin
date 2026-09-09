@@ -20,19 +20,35 @@ export function separateProcessFold(): void {
 	active = undefined;
 }
 
-/** Only agent_end (or a completed history boundary) confirms which text is final. */
+function trailingAnswerIndex(last: MessageState): number {
+	// Only a clean stop keeps a final answer outside the disclosure.
+	// Abort/error/length/toolUse hide every part, including any that arrive after this seal.
+	if (last.message.stopReason !== "stop") return Number.MAX_SAFE_INTEGER;
+	let index = last.parts.length;
+	while (index > 0 && last.parts[index - 1].type === "text") index--;
+	return index;
+}
+
+function foldAnchor(process: ProcessFoldState, last: MessageState, finalPartIndex: number): MessageState | undefined {
+	return process.messages.find((message) => {
+		if (message.parts.length === 0) return false;
+		if (message.id !== last.id) return true;
+		if (last.message.stopReason !== "stop") return true;
+		return finalPartIndex > 0;
+	});
+}
+
+/** Seal every pending process at a run or user boundary, whether it succeeded or not. */
 export function completeProcessFolds(): void {
-	active = undefined;
+	separateProcessFold();
 	for (const process of pending) {
+		if (process.fold) continue;
 		const last = process.messages.at(-1);
-		if (!last?.finished || last.message.stopReason !== "stop") continue;
-		let finalPartIndex = last.parts.length;
-		while (finalPartIndex > 0 && last.parts[finalPartIndex - 1].type === "text") finalPartIndex--;
-		if (finalPartIndex === last.parts.length) continue;
-		const anchor = process.messages.find((message) =>
-			message.id === last.id ? finalPartIndex > 0 : message.parts.length > 0,
-		);
-		// A direct answer with no preceding work does not need an empty disclosure.
+		if (!last) continue;
+		last.finished = true;
+		const finalPartIndex = trailingAnswerIndex(last);
+		const anchor = foldAnchor(process, last, finalPartIndex);
+		// Direct answers with no preceding work do not need an empty disclosure.
 		if (!anchor) continue;
 		process.fold = { anchorMessageId: anchor.id, finalMessageId: last.id, finalPartIndex };
 		process.expanded = false;

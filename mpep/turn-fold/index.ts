@@ -1,7 +1,7 @@
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { isPluginEnabled } from "../manager/preferences.ts";
 import { registerBuiltInTools } from "./builtin_tools_override.ts";
-import { separateProcessFold } from "./process_fold_state.ts";
+import { completeProcessFolds } from "./process_fold_state.ts";
 import { applyPatches } from "./core_components_patcher.ts";
 import { setupMcpCoordinator } from "./mcp_tools_coordinator.ts";
 import { resetMouseTiming } from "./mouse_interaction_handler.ts";
@@ -37,7 +37,8 @@ export default function (pi: ExtensionAPI): void {
 		if (event.message.role === "assistant") observeAssistant(event.message, true);
 		else if (event.message.role !== "toolResult") {
 			sealActiveGroup();
-			separateProcessFold();
+			// Steering / follow-ups close the previous disclosure immediately, not at agent_end.
+			completeProcessFolds();
 		}
 	});
 	pi.on("message_update", (event) => {

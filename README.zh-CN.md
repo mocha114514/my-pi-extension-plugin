@@ -20,7 +20,7 @@
 
 ![Executing view](assets/executing-view.png)
 
-本轮执行完毕后会自动进行折叠
+本轮结束后会自动折叠（说完、Abort、中途插话都一样）
 
 ![Auto collapse](assets/auto-collapse.png)
 

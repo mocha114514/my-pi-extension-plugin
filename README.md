@@ -20,7 +20,7 @@ While a response is executing:
 
 ![Executing view](assets/executing-view.png)
 
-The finished round collapses automatically:
+When a round ends — finished, aborted, or interrupted — the process collapses automatically:
 
 ![Auto collapse](assets/auto-collapse.png)
 

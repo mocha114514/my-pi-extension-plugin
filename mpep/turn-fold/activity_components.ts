@@ -219,7 +219,8 @@ export function installActivityComponents(): () => void {
 				container.addChild((slice as unknown as AssistantInternals).contentContainer);
 			}
 		}
-		for (const diagnostic of diagnostics) (fold ? body : internals.contentContainer).addChild(diagnostic);
+		// Abort/error/length text stays visible when the disclosure is collapsed.
+		for (const diagnostic of diagnostics) internals.contentContainer.addChild(diagnostic);
 	};
 	assistantPrototype.updateContent = update;
 
