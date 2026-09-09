@@ -69,14 +69,14 @@ Note: the TPS plugin comes from the official [Pi](https://github.com/earendil-wo
 ### Install and Update
 
 ```bash
-pi install git:github.com/mocha114514/my-pi-extension-plugin
-pi update git:github.com/mocha114514/my-pi-extension-plugin
+pi install git:github.com/mocha114514/better-pi-appearance
+pi update git:github.com/mocha114514/better-pi-appearance
 ```
 
 ### Uninstall
 
 ```bash
-pi remove git:github.com/mocha114514/my-pi-extension-plugin
+pi remove git:github.com/mocha114514/better-pi-appearance
 ```
 
 Then manually delete `~/.pi/agent/mpep-cache/` if you want a full cleanup.

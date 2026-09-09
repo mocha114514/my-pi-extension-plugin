@@ -69,14 +69,14 @@ Token 用量、费用、每日汇总和模型价格编辑。
 ### 安装与更新
 
 ```bash
-pi install git:github.com/mocha114514/my-pi-extension-plugin
-pi update git:github.com/mocha114514/my-pi-extension-plugin
+pi install git:github.com/mocha114514/better-pi-appearance
+pi update git:github.com/mocha114514/better-pi-appearance
 ```
 
 ### 卸载
 
 ```bash
-pi remove git:github.com/mocha114514/my-pi-extension-plugin
+pi remove git:github.com/mocha114514/better-pi-appearance
 ```
 
 然后手动删除 `~/.pi/agent/mpep-cache/` 即可彻底清理。

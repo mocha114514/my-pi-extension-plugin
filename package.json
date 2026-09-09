@@ -1,11 +1,11 @@
 {
-  "name": "my-pi-extension-plugin",
+  "name": "better-pi-appearance",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mocha114514/my-pi-extension-plugin.git"
+    "url": "https://github.com/mocha114514/better-pi-appearance.git"
   },
   "description": "MPEP extensions for Pi: install from Git or use the standalone mpep directory",
   "keywords": ["pi-package"],
