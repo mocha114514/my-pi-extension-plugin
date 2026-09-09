@@ -71,7 +71,7 @@ export class NavigationPanel implements Component {
 				glyph = "\u25bc";
 				enabled = this.active >= 0 && this.active < this.anchors.length - 1;
 			} else if (index !== undefined) {
-				glyph = index === this.active ? "\u2550\u2550" : "\u2500\u2500";
+				glyph = index === this.active ? "\u2550" : "\u2500";
 				enabled = true;
 			}
 			glyph = truncateToWidth(glyph, width, "");

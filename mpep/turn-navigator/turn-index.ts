@@ -4,8 +4,8 @@ export interface TurnAnchor {
 	readonly text: string;
 }
 
-/** Columns occupied by the right-side turn rail. Matches the two-cell ── / ══ markers. */
-export const NAVIGATOR_COLUMNS = 2;
+/** Columns occupied by the right-side turn rail. Matches the single-cell ─ / ═ markers. */
+export const NAVIGATOR_COLUMNS = 1;
 
 export function navigationBand(viewportHeight: number): { top: number; height: number } {
 	const available = Math.max(0, Math.floor(viewportHeight));
