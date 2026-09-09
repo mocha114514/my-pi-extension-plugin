@@ -1,6 +1,5 @@
 // Hover preview and Ctrl+click open for path-link chips.
 
-import { t } from "../shared/i18n/index.ts";
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import {
 	type Component,
@@ -14,7 +13,7 @@ import {
 } from "@earendil-works/pi-tui";
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
-import { decodePathHref, isCompletePath } from "./paths.ts";
+import { decodePathHref, isCompletePath, isWebHref } from "./paths.ts";
 
 type PathTheme = Pick<Theme, "fg">;
 
@@ -31,12 +30,10 @@ const HOVER_DELAY_MS = 160;
 
 class PathPreview implements Component {
 	private readonly path: string;
-	private readonly complete: boolean;
 	private readonly theme: () => PathTheme;
 
-	constructor(path: string, complete: boolean, theme: () => PathTheme) {
+	constructor(path: string, theme: () => PathTheme) {
 		this.path = path.replace(/\r\n?/g, "\n").replace(/\t/g, "    ");
-		this.complete = complete;
 		this.theme = theme;
 	}
 
@@ -46,21 +43,17 @@ class PathPreview implements Component {
 		if (width < 8) return [];
 		const theme = this.theme();
 		const inner = width - 4;
-		const body = [...wrapTextWithAnsi(this.path, Math.max(1, inner))];
-		if (!this.complete) body.push(t("path-links.incomplete"));
+		const body = wrapTextWithAnsi(this.path, Math.max(1, inner));
 		const visible = body.slice(0, 8);
 		if (body.length > 8) visible[7] = truncateToWidth(`${visible[7]}...`, inner, "...");
 		const top = `\u250c${"\u2500".repeat(Math.max(0, width - 2))}\u2510`;
 		return [
 			theme.fg("border", top),
-			...visible.map((line, index) => {
+			...visible.map((line) => {
 				const text = truncateToWidth(line, inner, "");
-				const color = !this.complete && index === visible.length - 1 && line === t("path-links.incomplete")
-					? "warning"
-					: "text";
 				return (
 					theme.fg("border", "\u2502 ") +
-					theme.fg(color, text + " ".repeat(Math.max(0, inner - visibleWidth(text)))) +
+					theme.fg("text", text + " ".repeat(Math.max(0, inner - visibleWidth(text)))) +
 					theme.fg("border", " \u2502")
 				);
 			}),
@@ -119,11 +112,11 @@ export function installPathLinkInteraction(options: { theme(): PathTheme }): { a
 			preview = undefined;
 		};
 
-		const showPreview = (path: string, complete: boolean, x: number, y: number) => {
+		const showPreview = (path: string, x: number, y: number) => {
 			if (internals.isOverlayFocused?.()) return;
 			const width = Math.min(72, Math.max(16, Math.min(tui.terminal.columns - 2, visibleWidth(path) + 4)));
 			if (width < 12) return;
-			const component = new PathPreview(path, complete, options.theme);
+			const component = new PathPreview(path, options.theme);
 			const height = component.render(width).length;
 			const col = Math.max(0, Math.min(x - Math.floor(width / 2), tui.terminal.columns - width));
 			const row = y - height >= 0 ? y - height : Math.min(y + 1, Math.max(0, tui.terminal.rows - height));
@@ -150,18 +143,18 @@ export function installPathLinkInteraction(options: { theme(): PathTheme }): { a
 			const motion = (button & 32) !== 0;
 			const line = internals.previousScreen?.[Math.max(0, Math.min((internals.previousScreen?.length ?? 1) - 1, y))] ?? "";
 			const href = getOsc8LinkAtColumn(line, Math.max(0, x));
-			const path = decodePathHref(href);
+			const preview = decodePathHref(href) ?? (isWebHref(href) ? href : undefined);
 
 			if (motion && (button & 3) === 3) {
-				if (!path || internals.isOverlayFocused?.()) {
+				if (!preview || internals.isOverlayFocused?.()) {
 					hidePreview();
 				} else if (pendingHref !== href) {
 					hidePreview();
 					pendingHref = href;
 					previewTimer = setTimeout(() => {
 						previewTimer = undefined;
-						if (pendingHref !== href || !path) return;
-						showPreview(path, isCompletePath(path), x, y);
+						if (pendingHref !== href || !preview) return;
+						showPreview(preview, x, y);
 					}, HOVER_DELAY_MS);
 					previewTimer.unref();
 				}
@@ -186,11 +179,7 @@ export function installPathLinkInteraction(options: { theme(): PathTheme }): { a
 				originalOpenUrl?.(url);
 				return;
 			}
-			if (!pointer.ctrl || pointer.dragged) return;
-			if (!isCompletePath(path)) {
-				internals.flash?.(t("path-links.incomplete"), 1500);
-				return;
-			}
+			if (!pointer.ctrl || pointer.dragged || !isCompletePath(path)) return;
 			openPath(resolveOpenTarget(path));
 		}
 		internals.openUrl = wrappedOpenUrl;

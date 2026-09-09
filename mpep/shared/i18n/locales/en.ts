@@ -35,7 +35,6 @@ export const en = {
   "plugin.markdown-enhancer.desc": "Rounded code blocks, typographic list bullets, bold emphasis lift and callout/heading/symbol transforms",
   "plugin.path-links.name": "Path short-links",
   "plugin.path-links.desc": "Also enables terminal hyperlinks. Collapses file paths to underlined short names; hover shows the full path; Ctrl+click opens complete paths",
-  "path-links.incomplete": "Incomplete path",
   "plugin.terminal-interaction.name": "Terminal editor interaction enhancements",
   "plugin.terminal-interaction.desc": "Selection copy/cut in the input editor, Ctrl+C double-confirm exit guard, cross-platform undo and bar cursor",
   "plugin.turn-navigator.name": "Conversation turn navigator",

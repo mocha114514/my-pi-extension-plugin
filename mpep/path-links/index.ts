@@ -1,7 +1,8 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, Theme } from "@earendil-works/pi-coding-agent";
 import { getCapabilities } from "@earendil-works/pi-tui";
 import { isPluginEnabled } from "../manager/preferences.ts";
 import { patchSelectionCopy } from "./copy.ts";
+import { installEditorPathChips } from "./editor.ts";
 import { enablePathLinkHyperlinks } from "./hyperlinks.ts";
 import { installPathLinkInteraction } from "./interaction.ts";
 import { transformPathMarkdown } from "./paths.ts";
@@ -16,7 +17,9 @@ export default function pathLinks(pi: ExtensionAPI): void {
 
 	installations[SLOT]?.();
 	enablePathLinkHyperlinks();
+	let theme: () => Pick<Theme, "fg"> = () => ({ fg: (_key, text) => text });
 	const disposeCopy = patchSelectionCopy();
+	const disposeEditor = installEditorPathChips(() => theme());
 	let interaction: ReturnType<typeof installPathLinkInteraction> | undefined;
 
 	pi.registerMarkdownTransformer((markdown, context) => {
@@ -28,6 +31,7 @@ export default function pathLinks(pi: ExtensionAPI): void {
 	const dispose = () => {
 		interaction?.dispose();
 		interaction = undefined;
+		disposeEditor();
 		disposeCopy();
 		if (installations[SLOT] === dispose) delete installations[SLOT];
 	};
@@ -38,6 +42,7 @@ export default function pathLinks(pi: ExtensionAPI): void {
 		interaction = undefined;
 		enablePathLinkHyperlinks();
 		if (!ctx.hasUI || ctx.mode !== "tui") return;
+		theme = () => ctx.ui.theme;
 		interaction = installPathLinkInteraction({ theme: () => ctx.ui.theme });
 		ctx.ui.setWidget(BRIDGE, (tui) => {
 			interaction?.attach(tui);

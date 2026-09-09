@@ -1,26 +1,23 @@
-// Path detection, markdown rewriting, and OSC 8 copy expansion for path-links.
-// Comments in English per repo convention.
+// Path / URL detection, markdown rewriting, and OSC 8 copy expansion.
+// Tokens are split on whitespace and backticks; original text is kept in the href.
 
 export const PATH_HREF_PREFIX = "mpep-path:";
 
-export interface PathHit {
-	start: number;
-	end: number;
-	path: string;
-	complete: boolean;
-}
-
-const TRAILING_PUNCT = /[.,;:!?)\]]+$/;
-const SCHEME_AT_START = /^[a-zA-Z][a-zA-Z+.-]*:/;
-const WINDOWS_ABS = /(?<![A-Za-z0-9_])([A-Za-z]:[\\/][^\s`|*?"<>\]]*)/g;
-const UNC_ABS = /(\\\\[^\s`|*?"<>\]]+)/g;
-const HOME_ABS = /(~[\\/][^\s`|*?"<>\]]+)/g;
-const UNIX_ABS = /(?<![A-Za-z0-9_:])(\/(?:[^\s`|*?"<>\]]+\/)+[^\s`|*?"<>\]]+)/g;
-const RELATIVE_FILE = /(?<![A-Za-z0-9_./-])((?:\.?[A-Za-z0-9_-]+[\\/]){2,}[A-Za-z0-9_.-]+\.[A-Za-z0-9]{1,12})(?![A-Za-z0-9_.-])/g;
-const QUOTED = /(?<![A-Za-z0-9_])(["'])((?:\\.|(?!\1).)+)\1/g;
-const URL_SPAN = /\b(?:(?:https?|mailto|file|ftp):|www\.)[^\s)\]]+/gi;
 const INLINE_CODE = /(`+)((?:(?!\1).|\\.)*)\1/g;
 const MD_LINK = /!?\[(?:[^\[\]\\]|\\.)*\]\((?:<[^>]+>|[^)\s]+)(?:\s+"[^"]*")?\)/g;
+const OSC8 = /\x1b\]8;[^;]*;([^\x07\x1b]*)(?:\x07|\x1b\\)/g;
+const DATE_TOKEN = /^\d{1,4}(\/\d{1,2}){1,2}$/;
+
+export type CollapseMode = "all" | "absolute-images";
+
+export interface CollapsibleToken {
+	start: number;
+	end: number;
+	text: string;
+	kind: "file" | "url";
+}
+
+const IMAGE_EXT = /\.(?:png|jpe?g|gif|webp|bmp|svg|ico|tif|tiff)$/i;
 
 export function encodePathHref(path: string): string {
 	return `${PATH_HREF_PREFIX}${encodeURIComponent(path)}`;
@@ -45,6 +42,14 @@ export function isCompletePath(path: string): boolean {
 	);
 }
 
+export function isWebHref(href: string | undefined): boolean {
+	return !!href && /^(?:https?:|mailto:|file:|ftp:)/i.test(href);
+}
+
+export function normalizeWebUrl(raw: string): string {
+	return /^www\./i.test(raw) ? `https://${raw}` : raw;
+}
+
 export function displayName(path: string): string {
 	const trimmed = path.replace(/[\\/]+$/, "");
 	const parts = trimmed.split(/[\\/]/);
@@ -52,127 +57,158 @@ export function displayName(path: string): string {
 	return last && last.length > 0 ? last : path;
 }
 
+export function displayNameForUrl(raw: string): string {
+	const href = normalizeWebUrl(raw);
+	if (/^mailto:/i.test(href)) return href.slice("mailto:".length);
+	try {
+		const url = new URL(href);
+		const last = url.pathname.split("/").filter(Boolean).at(-1);
+		if (last) {
+			try {
+				return decodeURIComponent(last);
+			} catch {
+				return last;
+			}
+		}
+		return url.hostname || raw;
+	} catch {
+		return displayName(raw);
+	}
+}
+
 export function toMarkdownLink(path: string): string {
 	const name = displayName(path).replace(/[\[\]]/g, "");
 	return `[${name || path}](${encodePathHref(path)})`;
 }
 
-function trimPathCandidate(raw: string): string {
-	let path = raw;
-	while (path.length > 3 && TRAILING_PUNCT.test(path) && !/[\\/]$/.test(path)) {
-		path = path.replace(TRAILING_PUNCT, "");
-	}
-	return path;
-}
-
-function overlaps(start: number, end: number, ranges: Array<{ start: number; end: number }>): boolean {
-	return ranges.some((range) => start < range.end && end > range.start);
+export function toWebMarkdownLink(url: string): string {
+	const href = normalizeWebUrl(url);
+	const name = displayNameForUrl(href).replace(/[\[\]]/g, "");
+	return `[${name || href}](<${href}>)`;
 }
 
 function allMatches(text: string, regex: RegExp): RegExpMatchArray[] {
 	return [...text.matchAll(new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : `${regex.flags}g`))];
 }
 
-function collectMatches(text: string, regex: RegExp, group: number): PathHit[] {
-	const hits: PathHit[] = [];
-	for (const match of allMatches(text, regex)) {
-		const captured = match[group] ?? match[0];
-		const path = trimPathCandidate(captured);
-		if (!path || (SCHEME_AT_START.test(path) && !/^[A-Za-z]:[\\/]/.test(path))) continue;
-		const offset = match[0].indexOf(captured);
-		const start = (match.index ?? 0) + Math.max(0, offset);
-		const end = start + captured.length - (captured.length - path.length);
-		if (end <= start) continue;
-		hits.push({ start, end, path, complete: isCompletePath(path) });
+function overlaps(start: number, end: number, ranges: Array<{ start: number; end: number }>): boolean {
+	return ranges.some((range) => start < range.end && end > range.start);
+}
+
+function isDelimiter(char: string | undefined): boolean {
+	return char === undefined || /\s/.test(char) || char === "`";
+}
+
+export function isAbsoluteImagePath(token: string): boolean {
+	return isCompletePath(token) && IMAGE_EXT.test(token.replace(/[\\/]+$/, ""));
+}
+
+export function looksLikePathToken(token: string): boolean {
+	if (token.length < 3) return false;
+	if (DATE_TOKEN.test(token)) return false;
+	if (/^(?:https?:|mailto:|file:|ftp:)/i.test(token) || /^www\./i.test(token)) return true;
+	if (/^[A-Za-z]:[\\/]/.test(token) || token.startsWith("\\\\") || token.startsWith("~/") || token.startsWith("~\\")) {
+		return true;
 	}
-	return hits;
+	return /[\\/]/.test(token);
 }
 
-function unquotedHits(text: string): PathHit[] {
-	return [
-		...collectMatches(text, WINDOWS_ABS, 1),
-		...collectMatches(text, UNC_ABS, 1),
-		...collectMatches(text, HOME_ABS, 1),
-		...collectMatches(text, UNIX_ABS, 1),
-		...collectMatches(text, RELATIVE_FILE, 1),
-	];
+function tokenKind(token: string): "file" | "url" {
+	return /^(?:https?:|mailto:|file:|ftp:)/i.test(token) || /^www\./i.test(token) ? "url" : "file";
 }
 
-function classifyQuotedInner(inner: string): { path: string; complete: boolean } | undefined {
-	const hits = unquotedHits(inner);
-	if (hits.length === 1 && hits[0].start === 0 && hits[0].end === inner.length) return hits[0];
-	if (isCompletePath(inner) && /[\\/]/.test(inner)) return { path: inner, complete: true };
-	return undefined;
+function displayForToken(token: CollapsibleToken): string {
+	const name = token.kind === "url" ? displayNameForUrl(token.text) : displayName(token.text);
+	return name.replace(/[\[\]]/g, "") || token.text;
 }
 
-function quotedHits(text: string): PathHit[] {
-	const hits: PathHit[] = [];
-	for (const match of allMatches(text, QUOTED)) {
-		const inner = match[2] ?? "";
-		const classified = classifyQuotedInner(inner);
-		if (!classified) continue;
-		hits.push({
-			start: match.index ?? 0,
-			end: (match.index ?? 0) + match[0].length,
-			path: classified.path,
-			complete: classified.complete,
-		});
-	}
-	return hits;
-}
-
-function protectedSpans(text: string): Array<{ start: number; end: number }> {
-	const spans: Array<{ start: number; end: number }> = [];
-	for (const regex of [URL_SPAN, MD_LINK]) {
-		for (const match of allMatches(text, regex)) {
-			spans.push({ start: match.index ?? 0, end: (match.index ?? 0) + match[0].length });
+export function findCollapsibleTokens(line: string, mode: CollapseMode = "all"): CollapsibleToken[] {
+	if (!line) return [];
+	const blocked = allMatches(line, MD_LINK).map((match) => ({
+		start: match.index ?? 0,
+		end: (match.index ?? 0) + match[0].length,
+	}));
+	const tokens: CollapsibleToken[] = [];
+	let index = 0;
+	while (index < line.length) {
+		const char = line[index] ?? "";
+		if (isDelimiter(char)) {
+			index++;
+			continue;
 		}
+		let end = index;
+		while (end < line.length && !isDelimiter(line[end])) end++;
+		const text = line.slice(index, end);
+		const kind = tokenKind(text);
+		const token = { start: index, end, text, kind };
+		const allowed = mode === "absolute-images" ? kind === "file" && isAbsoluteImagePath(text) : looksLikePathToken(text);
+		if (allowed && displayForToken(token) !== text && !overlaps(index, end, blocked)) {
+			tokens.push(token);
+		}
+		index = end;
 	}
-	return spans;
+	return tokens;
 }
 
-/** Classify a whole string as a single path, or return undefined. */
-export function classifyPath(text: string): PathHit | undefined {
-	const trimmed = text.trim();
-	if (!trimmed) return undefined;
-	const hits = findPathHits(trimmed);
-	if (hits.length !== 1 || hits[0].start !== 0 || hits[0].end !== trimmed.length) return undefined;
-	return hits[0];
-}
-
-export function findPathHits(text: string): PathHit[] {
-	if (!text) return [];
-	const blocked = protectedSpans(text);
-	const quoted = quotedHits(text);
-	const unquoted = unquotedHits(text);
-	const merged: PathHit[] = [];
-	const quotedSpans = quoted.map((hit) => ({ start: hit.start, end: hit.end }));
-	for (const hit of [...quoted, ...unquoted].sort((a, b) => a.start - b.start || b.end - a.end)) {
-		if (overlaps(hit.start, hit.end, blocked)) continue;
-		if (quoted.includes(hit) === false && overlaps(hit.start, hit.end, quotedSpans)) continue;
-		if (overlaps(hit.start, hit.end, merged)) continue;
-		if (hit.path.length < 2) continue;
-		merged.push(hit);
+export function collapseLineVisual(
+	line: string,
+	cursor?: number,
+	mode: CollapseMode = "all",
+): { visual: string; toLogical: number[]; toVisual: number[] } {
+	const tokens = findCollapsibleTokens(line, mode);
+	const skip = new Set(
+		tokens
+			.filter((token) => cursor === undefined || cursor < token.start || cursor >= token.end)
+			.map((token) => token.start),
+	);
+	const byStart = new Map(tokens.map((token) => [token.start, token]));
+	let visual = "";
+	const toLogical: number[] = [];
+	const toVisual: number[] = [];
+	let logical = 0;
+	while (logical < line.length) {
+		const token = byStart.get(logical);
+		if (token && skip.has(logical)) {
+			const display = displayForToken(token);
+			const span = Math.max(1, token.end - token.start);
+			const visualStart = visual.length;
+			visual += display;
+			for (let offset = 0; offset < display.length; offset++) {
+				toLogical.push(token.start + Math.min(span - 1, Math.floor((offset * span) / display.length)));
+			}
+			for (let index = 0; index < span; index++) {
+				toVisual[token.start + index] =
+					visualStart + Math.min(display.length - 1, Math.floor((index * display.length) / span));
+			}
+			toVisual[token.end] = visualStart + display.length;
+			logical = token.end;
+			continue;
+		}
+		toVisual[logical] = visual.length;
+		toLogical.push(logical);
+		visual += line[logical] ?? "";
+		logical++;
 	}
-	return merged;
+	toVisual[line.length] = visual.length;
+	toLogical.push(line.length);
+	return { visual, toLogical, toVisual };
 }
 
-interface Segment {
-	start: number;
-	end: number;
-	kind: "code" | "text";
-	raw: string;
+function replacementFor(token: CollapsibleToken): string {
+	return token.kind === "url" ? toWebMarkdownLink(token.text) : toMarkdownLink(token.text);
 }
 
-function splitInline(line: string): Segment[] {
-	const segments: Segment[] = [];
-	const codes: Array<{ start: number; end: number }> = [];
-	for (const match of allMatches(line, INLINE_CODE)) {
-		codes.push({ start: match.index ?? 0, end: (match.index ?? 0) + match[0].length });
-	}
+function splitInline(line: string): Array<{ start: number; end: number; kind: "code" | "text"; raw: string }> {
+	const segments: Array<{ start: number; end: number; kind: "code" | "text"; raw: string }> = [];
+	const codes = allMatches(line, INLINE_CODE).map((match) => ({
+		start: match.index ?? 0,
+		end: (match.index ?? 0) + match[0].length,
+	}));
 	let cursor = 0;
 	for (const code of codes) {
-		if (code.start > cursor) segments.push({ start: cursor, end: code.start, kind: "text", raw: line.slice(cursor, code.start) });
+		if (code.start > cursor) {
+			segments.push({ start: cursor, end: code.start, kind: "text", raw: line.slice(cursor, code.start) });
+		}
 		segments.push({ start: code.start, end: code.end, kind: "code", raw: line.slice(code.start, code.end) });
 		cursor = code.end;
 	}
@@ -187,27 +223,30 @@ function transformLine(line: string): string {
 		if (segment.kind === "code") {
 			const fence = /^(`+)([\s\S]*)\1$/.exec(segment.raw);
 			const inner = fence?.[2] ?? "";
-			const hit = classifyPath(inner);
-			out += hit ? toMarkdownLink(hit.path) : segment.raw;
+			const innerTokens = findCollapsibleTokens(inner);
+			out +=
+				innerTokens.length === 1 && innerTokens[0].start === 0 && innerTokens[0].end === inner.length
+					? replacementFor(innerTokens[0])
+					: segment.raw;
 			continue;
 		}
-		const hits = findPathHits(segment.raw);
-		if (hits.length === 0) {
+		const tokens = findCollapsibleTokens(segment.raw);
+		if (tokens.length === 0) {
 			out += segment.raw;
 			continue;
 		}
 		let cursor = 0;
-		for (const hit of hits) {
-			out += segment.raw.slice(cursor, hit.start);
-			out += toMarkdownLink(hit.path);
-			cursor = hit.end;
+		for (const token of tokens) {
+			out += segment.raw.slice(cursor, token.start);
+			out += replacementFor(token);
+			cursor = token.end;
 		}
 		out += segment.raw.slice(cursor);
 	}
 	return out;
 }
 
-/** Rewrite detected paths in markdown (outside fenced code) into short OSC 8 links. */
+/** Rewrite space/backtick-delimited path and URL tokens into short markdown links. */
 export function transformPathMarkdown(markdown: string): string {
 	const lines = markdown.split("\n");
 	const transformed: string[] = [];
@@ -232,15 +271,13 @@ export function transformPathMarkdown(markdown: string): string {
 	return transformed.join("\n");
 }
 
-const OSC8 = /\x1b\]8;[^;]*;([^\x07\x1b]*)(?:\x07|\x1b\\)/g;
-
 function emitChunk(chunk: string, active: string | undefined, strip: (value: string) => string): string {
 	const visible = strip(chunk);
 	if (!visible) return "";
-	return decodePathHref(active) ?? visible;
+	return decodePathHref(active) ?? (isWebHref(active) ? (active as string) : visible);
 }
 
-/** Replace visible short names of our OSC 8 links with the original path. */
+/** Replace visible short names of OSC 8 links with the original href/path. */
 export function expandPathLinks(ansi: string, strip: (value: string) => string): string {
 	if (!ansi.includes("\x1b]8;")) return strip(ansi);
 	let result = "";
