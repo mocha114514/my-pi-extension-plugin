@@ -1,10 +1,11 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { t } from "../shared/i18n/index.ts";
 import { loadRegistry, writePluginStates, type RegistryItem } from "./preferences.ts";
+import { disablePathLinkHyperlinks, enablePathLinkHyperlinks } from "../path-links/hyperlinks.ts";
 import { installTheme, uninstallTheme } from "../theme-distributor.ts";
 
 // Registry IDs and fallback metadata stay compatible with existing installations.
-const builtinIds = ["turn-fold", "markdown-enhancer", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage", "theme-distributor"] as const;
+const builtinIds = ["turn-fold", "markdown-enhancer", "path-links", "terminal-interaction", "turn-navigator", "cooking-timer", "statusline", "tps", "usage", "theme-distributor"] as const;
 
 // Lifecycle hooks: some plugins own files outside mpep-cache and must clean up
 // (or set up) when toggled, instead of just self-gating on next load.
@@ -12,6 +13,11 @@ const builtinIds = ["turn-fold", "markdown-enhancer", "terminal-interaction", "t
 type ToggleHook = (enabled: boolean) => string | undefined;
 const toggleHooks: Partial<Record<string, ToggleHook>> = {
 	"theme-distributor": (enabled) => enabled ? installTheme() : uninstallTheme(),
+	"path-links": (enabled) => {
+		if (enabled) enablePathLinkHyperlinks();
+		else disablePathLinkHyperlinks();
+		return undefined;
+	},
 };
 function display(item: RegistryItem): { name: string; desc: string } {
 	const id = builtinIds.find(id => id === item.id);

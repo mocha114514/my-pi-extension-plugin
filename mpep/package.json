@@ -18,6 +18,7 @@
       "./markdown-enhancer/index.ts",
       "./terminal-interaction/index.ts",
       "./turn-navigator/index.ts",
+      "./path-links/index.ts",
       "./cooking-timer.ts",
       "./fullscreen-scroll.ts",
       "./statusline.ts",

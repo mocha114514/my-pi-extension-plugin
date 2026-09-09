@@ -50,7 +50,7 @@
 		"toolOutput": "gray",
 
 		"mdHeading": "#f0c674",
-		"mdLink": "#81a2be",
+		"mdLink": "accent",
 		"mdLinkUrl": "dimGray",
 		"mdCode": "accent",
 		"mdCodeBlock": "matchaGreen",
