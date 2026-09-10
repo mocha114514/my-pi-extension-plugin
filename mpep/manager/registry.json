@@ -10,7 +10,7 @@
     "id": "path-links",
     "name": "路径短链与超链接",
     "path": "./path-links/index.ts",
-    "desc": "同步开启 hyperlinks。文件路径收成主题色下划线短名，悬停显示完整路径，完整路径 Ctrl+点击用系统打开",
+    "desc": "同步开启 hyperlinks。文件路径收成主题色下划线短名，悬停显示完整路径，完整路径点击用系统打开",
     "enabled": true
   },
   {

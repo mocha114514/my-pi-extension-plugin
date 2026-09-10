@@ -1,5 +1,9 @@
 // Path / URL detection, markdown rewriting, and OSC 8 copy expansion.
-// Tokens are split on whitespace and backticks; original text is kept in the href.
+// Tokens are split on whitespace and backticks.
+// Complete paths use file:// so the terminal can open them; relative paths keep mpep-path:.
+
+import { homedir } from "node:os";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const PATH_HREF_PREFIX = "mpep-path:";
 
@@ -19,17 +23,40 @@ export interface CollapsibleToken {
 
 const IMAGE_EXT = /\.(?:png|jpe?g|gif|webp|bmp|svg|ico|tif|tiff)$/i;
 
+export function resolveOpenTarget(path: string): string {
+	if (path.startsWith("~/") || path.startsWith("~\\")) return `${homedir()}${path.slice(1)}`;
+	return path;
+}
+
+/** file:// for complete paths so WT/Pi can open them; mpep-path: otherwise to preserve relative text. */
 export function encodePathHref(path: string): string {
+	if (isCompletePath(path)) {
+		try {
+			return pathToFileURL(resolveOpenTarget(path)).href;
+		} catch {
+			// Fall through to the relative-path encoding.
+		}
+	}
 	return `${PATH_HREF_PREFIX}${encodeURIComponent(path)}`;
 }
 
 export function decodePathHref(href: string | undefined): string | undefined {
-	if (!href?.startsWith(PATH_HREF_PREFIX)) return undefined;
-	try {
-		return decodeURIComponent(href.slice(PATH_HREF_PREFIX.length));
-	} catch {
-		return href.slice(PATH_HREF_PREFIX.length);
+	if (!href) return undefined;
+	if (href.startsWith(PATH_HREF_PREFIX)) {
+		try {
+			return decodeURIComponent(href.slice(PATH_HREF_PREFIX.length));
+		} catch {
+			return href.slice(PATH_HREF_PREFIX.length);
+		}
 	}
+	if (/^file:/i.test(href)) {
+		try {
+			return fileURLToPath(href);
+		} catch {
+			return undefined;
+		}
+	}
+	return undefined;
 }
 
 export function isCompletePath(path: string): boolean {
@@ -76,9 +103,13 @@ export function displayNameForUrl(raw: string): string {
 	}
 }
 
+function markdownDestination(href: string): string {
+	return href.includes("://") || /[\s()]/.test(href) ? `<${href}>` : href;
+}
+
 export function toMarkdownLink(path: string): string {
 	const name = displayName(path).replace(/[\[\]]/g, "");
-	return `[${name || path}](${encodePathHref(path)})`;
+	return `[${name || path}](${markdownDestination(encodePathHref(path))})`;
 }
 
 export function toWebMarkdownLink(url: string): string {

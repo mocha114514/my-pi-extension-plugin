@@ -1,4 +1,4 @@
-// Hover preview and Ctrl+click open for path-link chips.
+// Hover preview and click-to-open for path-link chips.
 
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import {
@@ -12,8 +12,7 @@ import {
 	wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import { spawn } from "node:child_process";
-import { homedir } from "node:os";
-import { decodePathHref, isCompletePath, isWebHref } from "./paths.ts";
+import { decodePathHref, isCompletePath, isWebHref, resolveOpenTarget } from "./paths.ts";
 
 type PathTheme = Pick<Theme, "fg">;
 
@@ -62,11 +61,6 @@ class PathPreview implements Component {
 	}
 }
 
-function resolveOpenTarget(path: string): string {
-	if (path.startsWith("~/") || path.startsWith("~\\")) return `${homedir()}${path.slice(1)}`;
-	return path;
-}
-
 function openPath(target: string): void {
 	const [cmd, args]: [string, string[]] =
 		process.platform === "darwin"
@@ -80,8 +74,6 @@ function openPath(target: string): void {
 }
 
 interface PointerState {
-	ctrl: boolean;
-	url?: string;
 	dragged: boolean;
 }
 
@@ -99,7 +91,7 @@ export function installPathLinkInteraction(options: { theme(): PathTheme }): { a
 		if (typeof internals.handleViewportInput !== "function") return false;
 		if (Reflect.get(tui, ATTACHED)) return true;
 
-		const pointer: PointerState = { ctrl: false, dragged: false };
+		const pointer: PointerState = { dragged: false };
 		let preview: OverlayHandle | undefined;
 		let previewTimer: ReturnType<typeof setTimeout> | undefined;
 		let pendingHref: string | undefined;
@@ -160,8 +152,6 @@ export function installPathLinkInteraction(options: { theme(): PathTheme }): { a
 				}
 			} else {
 				if (!motion && !release) {
-					pointer.ctrl = (button & 16) !== 0;
-					pointer.url = href;
 					pointer.dragged = false;
 				} else if (motion) {
 					pointer.dragged = true;
@@ -179,7 +169,7 @@ export function installPathLinkInteraction(options: { theme(): PathTheme }): { a
 				originalOpenUrl?.(url);
 				return;
 			}
-			if (!pointer.ctrl || pointer.dragged || !isCompletePath(path)) return;
+			if (pointer.dragged || !isCompletePath(path)) return;
 			openPath(resolveOpenTarget(path));
 		}
 		internals.openUrl = wrappedOpenUrl;
