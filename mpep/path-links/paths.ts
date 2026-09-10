@@ -103,14 +103,31 @@ export function isAbsoluteImagePath(token: string): boolean {
 	return isCompletePath(token) && IMAGE_EXT.test(token.replace(/[\\/]+$/, ""));
 }
 
+/** `/` and `\\` both count; a token needs at least two before it is collapsed. */
+function pathSeparatorCount(token: string): number {
+	return (token.match(/[\\/]/g) ?? []).length;
+}
+
+/** Latin letters count as an English word; CJK-only chains stay expanded. */
+function hasEnglishWord(token: string): boolean {
+	return /[A-Za-z]/.test(token);
+}
+
 export function looksLikePathToken(token: string): boolean {
 	if (token.length < 3) return false;
 	if (DATE_TOKEN.test(token)) return false;
 	if (/^(?:https?:|mailto:|file:|ftp:)/i.test(token) || /^www\./i.test(token)) return true;
-	if (/^[A-Za-z]:[\\/]/.test(token) || token.startsWith("\\\\") || token.startsWith("~/") || token.startsWith("~\\")) {
-		return true;
-	}
-	return /[\\/]/.test(token);
+	const shaped =
+		/^[A-Za-z]:[\\/]/.test(token) ||
+		token.startsWith("\\\\") ||
+		token.startsWith("~/") ||
+		token.startsWith("~\\") ||
+		/[\\/]/.test(token);
+	if (!shaped) return false;
+	// Keep short `foo/bar.ts` and CJK-only chains expanded.
+	if (pathSeparatorCount(token) < 2) return false;
+	if (!hasEnglishWord(token)) return false;
+	return true;
 }
 
 function tokenKind(token: string): "file" | "url" {
