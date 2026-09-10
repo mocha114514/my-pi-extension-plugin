@@ -130,13 +130,28 @@ function isDelimiter(char: string | undefined): boolean {
 	return char === undefined || isNeighborDelimiter(char);
 }
 
-/** Space or backtick. Line edges do not count: both sides must be real delimiters. */
+/** Space or backtick. Line edges are not delimiters unless `allowEdge` is set. */
 function isNeighborDelimiter(char: string | undefined): boolean {
 	return char !== undefined && (/\s/.test(char) || char === "`");
 }
 
+function isTokenBoundary(char: string | undefined, allowEdge: boolean): boolean {
+	return isNeighborDelimiter(char) || (allowEdge && char === undefined);
+}
+
+function lastPathSegment(token: string): string {
+	const trimmed = token.replace(/[\\/]+$/, "");
+	return trimmed.split(/[\\/]/).at(-1) ?? "";
+}
+
+/** Drive / UNC / home, or a unix root path with at least two separators, ending in an image extension. */
 export function isAbsoluteImagePath(token: string): boolean {
-	return isCompletePath(token) && IMAGE_EXT.test(token.replace(/[\\/]+$/, ""));
+	if (!isCompletePath(token)) return false;
+	if (!IMAGE_EXT.test(lastPathSegment(token))) return false;
+	// `/logo.png` is technically absolute; two separators are required so line-edge
+	// chips stay filesystem paths (`/tmp/x.png`) instead of root-relative names.
+	if (token.startsWith("/") && !token.startsWith("//")) return pathSeparatorCount(token) >= 2;
+	return true;
 }
 
 /** `/` and `\\` both count; a token needs at least two before it is collapsed. */
@@ -182,7 +197,9 @@ export function findCollapsibleTokens(
 ): CollapsibleToken[] {
 	if (!line) return [];
 	// Codespan inners pass true so a lone path inside backticks still matches.
-	// Line start/end never count as delimiters, including editor image chips.
+	// Absolute image paths also treat line edges as delimiters: Pi trims submitted
+	// editor text, so a leading space added only to chip a clipboard image is gone
+	// in the transcript. Other paths still need a real space or backtick on both sides.
 	const edges = allowEdges === true;
 	const blocked = allMatches(line, MD_LINK).map((match) => ({
 		start: match.index ?? 0,
@@ -201,8 +218,10 @@ export function findCollapsibleTokens(
 		const text = line.slice(index, end);
 		const kind = tokenKind(text);
 		const token = { start: index, end, text, kind };
-		const allowed = mode === "absolute-images" ? kind === "file" && isAbsoluteImagePath(text) : looksLikePathToken(text);
-		const bounded = edges || (isNeighborDelimiter(line[index - 1]) && isNeighborDelimiter(line[end]));
+		const image = kind === "file" && isAbsoluteImagePath(text);
+		const allowed = mode === "absolute-images" ? image : looksLikePathToken(text);
+		const bounded =
+			edges || (isTokenBoundary(line[index - 1], image) && isTokenBoundary(line[end], image));
 		if (allowed && bounded && displayForToken(token) !== text && !overlaps(index, end, blocked)) {
 			tokens.push(token);
 		}
