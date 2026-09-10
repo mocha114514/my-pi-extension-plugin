@@ -2,6 +2,7 @@ import { t } from "../shared/i18n/index.ts";
 import { CompactionSummaryMessageComponent } from "@earendil-works/pi-coding-agent";
 import { type Container, Markdown, MouseRegion, Spacer, Text, visibleWidth } from "@earendil-works/pi-tui";
 import { installActivityComponents } from "./activity_components.ts";
+import { installCompactionPlacement } from "./compaction_placement.ts";
 import { isCompactionDoubleClick } from "./mouse_interaction_handler.ts";
 import { safeThemeBold, safeThemeFg } from "./summary_preview_renderer.ts";
 
@@ -10,6 +11,7 @@ const patches = globalThis as unknown as Record<symbol, (() => void) | undefined
 export function applyPatches(): () => void {
 	patches[patchSlot]?.();
 	const disposeActivity = installActivityComponents();
+	const disposePlacement = installCompactionPlacement();
 	const compactionPrototype = CompactionSummaryMessageComponent.prototype as unknown as Container & {
 		updateDisplay(): void;
 	};
@@ -74,6 +76,7 @@ export function applyPatches(): () => void {
 	const installedCompaction = compactionPrototype.updateDisplay;
 	const dispose = () => {
 		disposeActivity();
+		disposePlacement();
 		if (compactionPrototype.updateDisplay === installedCompaction)
 			compactionPrototype.updateDisplay = originalCompaction;
 		if (patches[patchSlot] === dispose) delete patches[patchSlot];
