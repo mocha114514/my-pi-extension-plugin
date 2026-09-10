@@ -1,5 +1,4 @@
 import { execFile } from "node:child_process";
-import { relative } from "node:path";
 import { promisify } from "node:util";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
@@ -11,7 +10,7 @@ const execFileAsync = promisify(execFile);
 // ── ANSI Colors (high-contrast bright colors, consistent with statusline.py) ──
 const CYAN = "\x1b[96m"; // Model name and right-side info
 const GREEN = "\x1b[92m"; // Project root directory
-const BLUE = "\x1b[94m"; // Current relative directory
+const BLUE = "\x1b[94m"; // Session name
 const YELLOW = "\x1b[93m"; // Normal token display
 const LIGHT_PINK = "\x1b[38;2;255;182;193m"; // Git branch and status
 const GRAY = "\x1b[90m"; // Separator
@@ -34,6 +33,19 @@ function formatContextTokens(count: number): string {
 	if (count <= 0) return "0k";
 	if (count < 1000) return `${(count / 1000).toFixed(1)}k`;
 	return `${Math.round(count / 1000)}k`;
+}
+
+/** Left cluster + right-aligned cluster on one row; left truncates first when tight. */
+function composeLeftRight(left: string, right: string, width: number): string {
+	if (width <= 0) return "";
+	if (!right) return truncateToWidth(left, width, "...");
+	const rightWidth = visibleWidth(right);
+	if (rightWidth >= width) return truncateToWidth(right, width, "...");
+	const gap = 1;
+	const leftBudget = width - rightWidth - gap;
+	const fittedLeft = leftBudget > 0 ? truncateToWidth(left, leftBudget, "...") : "";
+	const pad = Math.max(gap, width - visibleWidth(fittedLeft) - rightWidth);
+	return `${fittedLeft}${" ".repeat(pad)}${right}`;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -201,33 +213,22 @@ export default function (pi: ExtensionAPI) {
 						contextColor = ORANGE;
 					}
 
-					// ── 3. Line 1: project root | relative path ──
-					const currentCwd = ctx.cwd;
-					let relDir = relative(projectRoot, currentCwd).replace(/\\/g, "/");
-					if (!relDir || relDir === "") relDir = ".";
-
+					// ── 3. Line 1: project root [• session name]          git (right) ──
 					const sessionName = ctx.sessionManager.getSessionName();
-					const relDirDisplay = sessionName ? `${relDir} • ${sessionName}` : relDir;
+					const line1Left = sessionName
+						? `${GREEN}${projectRoot}${RESET} ${GRAY}•${RESET} ${BLUE}${sessionName}${RESET}`
+						: `${GREEN}${projectRoot}${RESET}`;
+					const gitText = cachedGitStatus ? `${LIGHT_PINK}${cachedGitStatus}${RESET}` : "";
 
-					const line1Left = [
-						`${GREEN}${projectRoot}${RESET}`,
-						`${BLUE}${relDirDisplay}${RESET}`,
-					].join(` ${GRAY}|${RESET} `);
-
-					// ── 4. Line 2: input/output • cache • context tokens | Git status ──
+					// ── 4. Line 2: input/output • cache • context tokens ──
 					const usageParts = [
 						`${YELLOW}${cumulativeStr}${RESET}`,
 						`${YELLOW}${cacheParts.join(" ")}${RESET}`,
 						`${contextColor}${contextText}${RESET}`,
 					];
-					const line2LeftParts = [usageParts.join(` ${GRAY}•${RESET} `)];
-					if (cachedGitStatus) {
-						line2LeftParts.push(`${LIGHT_PINK}${cachedGitStatus}${RESET}`);
-					}
+					const line2Left = usageParts.join(` ${GRAY}•${RESET} `);
 
-					const line2Left = line2LeftParts.join(` ${GRAY}|${RESET} `);
-
-					const line1 = truncateToWidth(line1Left, width, "...");
+					const line1 = composeLeftRight(line1Left, gitText, width);
 					const line2 = truncateToWidth(line2Left, width, "...");
 
 					const lines = [line1, line2];
