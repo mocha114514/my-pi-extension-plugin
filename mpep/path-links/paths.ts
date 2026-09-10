@@ -181,7 +181,9 @@ export function findCollapsibleTokens(
 	allowEdges?: boolean,
 ): CollapsibleToken[] {
 	if (!line) return [];
-	const edges = allowEdges ?? mode === "absolute-images";
+	// Codespan inners pass true so a lone path inside backticks still matches.
+	// Line start/end never count as delimiters, including editor image chips.
+	const edges = allowEdges === true;
 	const blocked = allMatches(line, MD_LINK).map((match) => ({
 		start: match.index ?? 0,
 		end: (match.index ?? 0) + match[0].length,
