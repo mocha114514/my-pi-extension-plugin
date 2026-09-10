@@ -22,7 +22,7 @@ type RenderedMessage = { top: number; bottom: number } & (
 
 // Pi 0.85.x exposes no transcript-geometry extension API. Confine the read-only
 // internal access to this module, and use only the host's completed render caches.
-function readViewport(reference: TUI): { center: number; messages: RenderedMessage[] } | undefined {
+function readViewport(reference: TUI): { atEnd: boolean; center: number; messages: RenderedMessage[] } | undefined {
 	const tui = reference.valueOf() as TUI & {
 		currentLayout?: { root: LayoutBox; primaryScrollView?: ScrollView };
 	};
@@ -72,8 +72,12 @@ function readViewport(reference: TUI): { center: number; messages: RenderedMessa
 		return true;
 	};
 	const document = scroll.children[0];
-	const valid = document && visit(document, 0, box.scrollContentLines?.length ?? 0);
+	const contentHeight = box.scrollContentLines?.length ?? 0;
+	const valid = document && visit(document, 0, contentHeight);
 	return {
+		// Same maxTop rule as turn-navigator: a short final round cannot pull the
+		// viewport center out of a long previous reply while follow/scroll sits at end.
+		atEnd: scroll.scrollTop >= Math.max(0, contentHeight - scroll.viewportHeight),
 		center: scroll.scrollTop + box.clip.y - box.rect.y + (box.clip.height - 1) / 2,
 		messages: valid ? messages : [],
 	};
@@ -83,6 +87,9 @@ export function selectViewportTurn(reference: TUI, entries: readonly SessionEntr
 	const viewport = readViewport(reference);
 	// Regular terminals own their scrollback; Pi has no coordinates for that scroll position.
 	if (!viewport) return turns.findLast((turn) => elapsedForTurn(turn) !== undefined);
+	// Last user round on the branch, including unfinished ones. The widget leaves
+	// the label blank when elapsedForTurn is undefined instead of inheriting an older duration.
+	if (viewport.atEnd) return turns.at(-1);
 	const records = entries.filter((entry) => entry.type === "message");
 	const positions = new Map(records.map((entry, index) => [entry.message, index]));
 	const users = new Map(turns.map((turn) => [turn.user.message, turn]));
