@@ -18,6 +18,24 @@ const UNORDERED_BULLETS = ["• ", "◦ ", "▪ "];
  */
 const BASE_INDENT = "  ";
 
+/** Trailing file extension in the fence info string, e.g. `.ts` in `notes src/app.ts`. */
+const FENCE_EXTENSION_RE = /\.([A-Za-z][A-Za-z0-9]*)$/;
+
+/**
+ * Language id handed to theme.highlightCode.
+ *
+ * Models often put a file path — sometimes after extra words — in the fence
+ * info instead of a language. The last trailing ".ext" on the whole string is
+ * used; a bare path segment such as a folder named "py" is left unchanged.
+ * highlightCode itself drops unknown extensions (e.g. png) back to plaintext.
+ */
+export function resolveCodeBlockHighlightLang(raw: string | undefined): string | undefined {
+	const trimmed = (raw ?? "").trim();
+	if (!trimmed) return undefined;
+	const extension = FENCE_EXTENSION_RE.exec(trimmed)?.[1];
+	return extension ? extension.toLowerCase() : trimmed;
+}
+
 /**
  * Patch Markdown.prototype.renderToken at runtime to enhance code blocks
  * with stylish full rounded borders, skipping mermaid diagrams.
@@ -59,8 +77,9 @@ function applyCodeBlockPatch(): () => void {
 				lines.push(topHeader);
 
 				const rawText = token.text ?? "";
+				const highlightLang = resolveCodeBlockHighlightLang(token.lang);
 				const highlightedLines: string[] = this.theme.highlightCode
-					? this.theme.highlightCode(rawText, token.lang)
+					? this.theme.highlightCode(rawText, highlightLang)
 					: rawText
 							.split("\n")
 							.map((line: string) => (this.theme.codeBlock ? this.theme.codeBlock(line) : line));
