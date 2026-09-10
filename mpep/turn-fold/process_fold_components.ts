@@ -1,6 +1,6 @@
 import { t } from "../shared/i18n/index.ts";
-import { stripVTControlCharacters } from "node:util";
 import { type Component, MouseRegion, type TuiMouseEvent, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { isPaddedLineBlank } from "./mouse_interaction_handler.ts";
 import { toggleProcessFold } from "./process_fold_state.ts";
 import type { ProcessFoldState } from "./extension_types.ts";
 import { getLatestTheme } from "./summary_preview_renderer.ts";
@@ -43,8 +43,7 @@ export function createProcessFoldBody(component: Component, process: ProcessFold
 	return new MouseRegion(component, (event) => {
 		if (!process.expanded || event.button !== "left") return;
 		const line = component.render(event.width)[event.y] ?? "";
-		// Native Markdown pads rows to the terminal width; padding is still clickable whitespace.
-		if (event.x < visibleWidth(stripVTControlCharacters(line).trimEnd())) return;
+		if (!isPaddedLineBlank(line, event.x)) return;
 		if (event.type === "press") return { handled: true };
 		if (event.type === "click") {
 			if (doubleClick(process, event, "blank")) toggleProcessFold(process);

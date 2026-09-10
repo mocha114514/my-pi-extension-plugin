@@ -1,3 +1,4 @@
+import { stripVTControlCharacters } from "node:util";
 import { type Component, MouseRegion, type TuiMouseEvent, visibleWidth } from "@earendil-works/pi-tui";
 import { toggleToolExpanded, toggleTurnExpanded } from "./turn_state_manager.ts";
 
@@ -35,6 +36,11 @@ export function isBlankDoubleClick(event: TuiMouseEvent, turnId: number): boolea
 
 export function isCompactionDoubleClick(instance: object, event: TuiMouseEvent): boolean {
 	return isDoubleClick(compactionClick, instance, event);
+}
+
+/** Native Text/Markdown pad rows to the terminal width; trailing padding is still blank. */
+export function isPaddedLineBlank(line: string, x: number): boolean {
+	return x >= visibleWidth(stripVTControlCharacters(line).trimEnd());
 }
 
 export function resetMouseTiming(): void {
