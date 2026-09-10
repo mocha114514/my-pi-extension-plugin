@@ -5,6 +5,7 @@ import { patchSelectionCopy } from "./copy.ts";
 import { installEditorPathChips } from "./editor.ts";
 import { enablePathLinkHyperlinks } from "./hyperlinks.ts";
 import { installPathLinkInteraction } from "./interaction.ts";
+import { installMarkdownLinkColor } from "./link-color.ts";
 import { transformPathMarkdown } from "./paths.ts";
 
 const PLUGIN_ID = "path-links";
@@ -20,6 +21,7 @@ export default function pathLinks(pi: ExtensionAPI): void {
 	let theme: () => Pick<Theme, "fg"> = () => ({ fg: (_key, text) => text });
 	const disposeCopy = patchSelectionCopy();
 	const disposeEditor = installEditorPathChips(() => theme());
+	const disposeLinkColor = installMarkdownLinkColor();
 	let interaction: ReturnType<typeof installPathLinkInteraction> | undefined;
 
 	pi.registerMarkdownTransformer((markdown, context) => {
@@ -33,6 +35,7 @@ export default function pathLinks(pi: ExtensionAPI): void {
 		interaction = undefined;
 		disposeEditor();
 		disposeCopy();
+		disposeLinkColor();
 		if (installations[SLOT] === dispose) delete installations[SLOT];
 	};
 	installations[SLOT] = dispose;

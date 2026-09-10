@@ -124,7 +124,7 @@ export function looksLikePathToken(token: string): boolean {
 		token.startsWith("~\\") ||
 		/[\\/]/.test(token);
 	if (!shaped) return false;
-	// Keep short `foo/bar.ts` and CJK-only chains expanded.
+	// One `/` or `\` is not a path: `/reload`, `foo/bar.ts`, `C:\a` stay plain text.
 	if (pathSeparatorCount(token) < 2) return false;
 	if (!hasEnglishWord(token)) return false;
 	return true;
