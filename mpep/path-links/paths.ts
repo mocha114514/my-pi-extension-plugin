@@ -127,7 +127,12 @@ function overlaps(start: number, end: number, ranges: Array<{ start: number; end
 }
 
 function isDelimiter(char: string | undefined): boolean {
-	return char === undefined || /\s/.test(char) || char === "`";
+	return char === undefined || isNeighborDelimiter(char);
+}
+
+/** Space or backtick. Line edges do not count: both sides must be real delimiters. */
+function isNeighborDelimiter(char: string | undefined): boolean {
+	return char !== undefined && (/\s/.test(char) || char === "`");
 }
 
 export function isAbsoluteImagePath(token: string): boolean {
@@ -170,8 +175,13 @@ function displayForToken(token: CollapsibleToken): string {
 	return name.replace(/[\[\]]/g, "") || token.text;
 }
 
-export function findCollapsibleTokens(line: string, mode: CollapseMode = "all"): CollapsibleToken[] {
+export function findCollapsibleTokens(
+	line: string,
+	mode: CollapseMode = "all",
+	allowEdges?: boolean,
+): CollapsibleToken[] {
 	if (!line) return [];
+	const edges = allowEdges ?? mode === "absolute-images";
 	const blocked = allMatches(line, MD_LINK).map((match) => ({
 		start: match.index ?? 0,
 		end: (match.index ?? 0) + match[0].length,
@@ -190,7 +200,8 @@ export function findCollapsibleTokens(line: string, mode: CollapseMode = "all"):
 		const kind = tokenKind(text);
 		const token = { start: index, end, text, kind };
 		const allowed = mode === "absolute-images" ? kind === "file" && isAbsoluteImagePath(text) : looksLikePathToken(text);
-		if (allowed && displayForToken(token) !== text && !overlaps(index, end, blocked)) {
+		const bounded = edges || (isNeighborDelimiter(line[index - 1]) && isNeighborDelimiter(line[end]));
+		if (allowed && bounded && displayForToken(token) !== text && !overlaps(index, end, blocked)) {
 			tokens.push(token);
 		}
 		index = end;
@@ -271,7 +282,7 @@ function transformLine(line: string): string {
 		if (segment.kind === "code") {
 			const fence = /^(`+)([\s\S]*)\1$/.exec(segment.raw);
 			const inner = fence?.[2] ?? "";
-			const innerTokens = findCollapsibleTokens(inner);
+			const innerTokens = findCollapsibleTokens(inner, "all", true);
 			out +=
 				innerTokens.length === 1 && innerTokens[0].start === 0 && innerTokens[0].end === inner.length
 					? replacementFor(innerTokens[0])
