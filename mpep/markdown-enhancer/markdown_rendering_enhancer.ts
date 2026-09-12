@@ -251,12 +251,15 @@ function applyBoldPatch(): () => void {
 /**
  * Patch Markdown.prototype.renderTable at runtime to render tables as classic
  * "three-line" (booktabs-style) tables: a heavy top rule, a thin rule under
- * the header, a heavy bottom rule, and no vertical lines / row separators.
+ * the header, a heavy bottom rule, no vertical lines, and a light theme-styled
+ * separator between adjacent body rows. Each separator spans from the center
+ * of the first column to the center of the last column, leaving breathing
+ * room at both ends of the table.
  * Column width computation, cell wrapping and narrow-width fallbacks are kept
  * 1:1 with Pi's native table renderer (pi/packages/tui/src/components/markdown.ts
  * renderTable), so only the border output differs from the default style.
  */
-function applyTablePatch(): () => void {
+export function applyTablePatch(): () => void {
 	const proto = Markdown.prototype as any;
 	let active = true;
 
@@ -377,6 +380,18 @@ function applyTablePatch(): () => void {
 			const heavyRule = "━".repeat(ruleWidth);
 			const thinRule = "─".repeat(ruleWidth);
 
+			// Inter-row separator: a light rule between adjacent body rows, spanning
+			// from the center of the first column to the center of the last column so
+			// both ends of the table keep breathing room. Styled via theme.hr to
+			// follow the active theme.
+			// Positions are cell indices within a row line " cellA  cellB ": column i
+			// starts at 1 + sum(widths before i) + 2 * i.
+			const lastColStart = 1 + columnWidths.slice(0, -1).reduce((a: number, b: number) => a + b, 0) + 2 * (numCols - 1);
+			const rowRuleStart = 1 + Math.floor(columnWidths[0] / 2);
+			const rowRuleEnd = lastColStart + Math.floor(columnWidths[numCols - 1] / 2);
+			const rowRuleStyle = (text: string) => (this.theme.hr ? this.theme.hr(text) : text);
+			const rowRule = " ".repeat(rowRuleStart) + rowRuleStyle("─".repeat(rowRuleEnd - rowRuleStart + 1));
+
 			const lines: string[] = [];
 
 			// Emit one visual row (possibly multi-line after per-column wrapping).
@@ -401,9 +416,14 @@ function applyTablePatch(): () => void {
 			lines.push(heavyRule);
 			pushRowLines(wrapRowCells(token.header), true);
 			lines.push(thinRule);
-			for (const row of token.rows) {
+			token.rows.forEach((row: any[], rowIndex: number) => {
+				// The separator is inserted after the whole visual row, so multi-line
+				// cells are crossed by at most one separator.
+				if (rowIndex > 0) {
+					lines.push(rowRule);
+				}
 				pushRowLines(wrapRowCells(row), false);
-			}
+			});
 			lines.push(heavyRule);
 
 			if (nextTokenType && nextTokenType !== "space") {
